@@ -1,0 +1,1562 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <meta charset="UTF-8">
+    <title>os</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Roboto:ital,wght@0,100..900;1,100..900&display=swap"
+    rel="stylesheet">
+    
+    <style>
+        body {
+            margin: 0;
+            overflow: hidden;
+            font-family: Roboto, 'sans-serif';
+        }
+        
+        #desktop {
+            display: flex;
+            flex-direction: row;   /* horizontal */
+            flex-wrap: wrap;       /* allows wrapping to next line */
+            align-content: flex-start; /* keeps them at the top */
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 40px;
+            
+            background-image: url("https://wallpaperaccess.com/full/1682023.jpg");
+            background-size: cover;
+            /* or 100% 100% if you want stretch */
+            background-position: center;
+            background-repeat: no-repeat;
+        }
+        
+        
+        /* Taskbar */
+        #taskbar {
+            z-index: 10000;
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            height: 40px;
+            background: #111;
+            display: flex;
+            align-items: center;
+            padding: 0 10px;
+            gap: 10px;
+            color: white;
+        }
+        
+        /* Desktop icon */
+        .icon {
+            width: 80px;
+            text-align: center;
+            color: white;
+            cursor: pointer;
+            margin: 20px;
+            text-shadow: 0 0 6px black;
+        }
+        
+        /* Window */
+        .window {
+            z-index: 99;
+            position: absolute;
+            width: 900px;
+            height: 600px;
+            top: 100px;
+            left: 120px;
+            background: #2b2b2b;
+            border-radius: 16px;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.6);
+            display: none;
+            flex-direction: column;
+            overflow: hidden;
+            resize: both;
+            
+            transform: scale(0.9);
+            opacity: 0;
+            transition:
+            transform 0.18s ease,
+            opacity 0.18s ease,
+            top 0.18s ease-out,
+            left 0.18s ease-out,
+            width 0.18s ease-out,
+            height 0.18s ease-out,
+            border-radius 0.18s ease;
+        }
+        
+        .window.open {
+            transform: scale(1);
+            opacity: 1;
+        }
+        
+        .window.closing {
+            transform: scale(0.9);
+            opacity: 0;
+        }
+        
+        .window.dragging iframe,
+        .window.resizing iframe {
+            pointer-events: none;
+        }
+        
+        .taskbar-btn {
+            z-index: 101;
+            cursor: pointer;
+            padding: 4px 10px;
+            background: #222;
+            border-radius: 6px;
+            user-select: none;
+            
+            /* NEW: initial state (below taskbar) */
+            transform: translateY(100%);
+            opacity: 0;
+            
+            transition:
+            transform 0.4s ease,
+            opacity 0.4s ease;
+        }
+        
+        /* When appearing */
+        .taskbar-btn.show {
+            transform: translateY(0%);
+            opacity: 1;
+        }
+        
+        /* When closing (falling down) */
+        .taskbar-btn.fall {
+            transform: translateY(200%);
+            opacity: 0;
+            transition:
+            transform 0.6s ease-in
+            opacity 0.6s ease-in;
+        }
+        
+        /* Titlebar */
+        .titlebar {
+            height: 40px;
+            background: #3a3a3a;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 0 12px;
+            cursor: grab;
+            color: white;
+        }
+        
+        .titlebar span {
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            max-width: 300px;
+            outline: none;
+        }
+        
+        
+        /* Buttons */
+        .buttons {
+            display: flex;
+            gap: 8px;
+        }
+        
+        .btn {
+            width: 14px;
+            height: 14px;
+            border-radius: 50%;
+            cursor: pointer;
+        }
+        
+        .btn-close {
+            background: #ff5f56;
+        }
+        
+        .btn-min {
+            background: #ffbd2e;
+        }
+        
+        .btn-max {
+            background: #27c93f;
+        }
+        
+        /* Tabs */
+        /* Tabs */
+        .tabs {
+            display: flex;
+            align-items: flex-end;
+            background: #242424;
+            overflow: hidden;
+            position: relative;
+            contain: layout;
+            /* helps prevent weird layout recalcs */
+        }
+        
+        
+        /* Individual tab */
+        .tab {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            /* gives breathing room */
+            
+            padding: 8px 14px;
+            /* slightly more horizontal padding */
+            
+            color: white;
+            cursor: pointer;
+            background: #2f2f2f;
+            margin-right: 2px;
+            border-top-left-radius: 8px;
+            border-top-right-radius: 8px;
+            
+            transform: translateY(100%) scale(0.95);
+            opacity: 0;
+            
+            transition:
+            transform 0.25s cubic-bezier(.2, .8, .2, 1),
+            opacity 0.2s ease;
+        }
+        
+        /* When visible */
+        .tab.show {
+            transform: translateY(0%) scale(1);
+            opacity: 1;
+        }
+        
+        .tab-close {
+            margin-left: auto;
+            /* pushes it to the far right */
+            opacity: 0.6;
+            transition: opacity 0.15s ease;
+        }
+        
+        .tab-close:hover {
+            opacity: 1;
+        }
+        
+        
+        /* Removing animation */
+        .tab.removing {
+            transform: scale(0.9);
+            opacity: 0;
+        }
+        
+        /* Active */
+        .tab.active {
+            background: #444;
+        }
+        
+        /* + button */
+        .add-tab {
+            padding: 8px 12px;
+            cursor: pointer;
+            color: white;
+            transition: transform 0.25s cubic-bezier(.2, .8, .2, 1);
+        }
+        
+        
+        .content {
+            flex: 1;
+            background: #1f1f1f;
+        }
+        
+        iframe {
+            width: 100%;
+            height: 100%;
+            border: none;
+        }
+        
+        /* === Boot Screen === */
+        #bootScreen {
+            position: fixed;
+            inset: 0;
+            background: black;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 99999;
+            transition: opacity 1.2s ease;
+        }
+        
+        #bootScreen.fadeOut {
+            opacity: 0;
+            pointer-events: none;
+        }
+        
+        #bootScreen {
+            position: fixed;
+            inset: 0;
+            background: black;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 99999;
+            transition: opacity 1.5s ease;
+        }
+        
+        #bootScreen.fadeIn {
+            opacity: 1;
+            pointer-events: none;
+        }
+        
+        #bootScreen.fadeOut {
+            opacity: 0;
+            pointer-events: none;
+        }
+        
+        #bootLogo {
+            display: flex;
+            gap: 4px;
+            font-size: 80px;
+            font-weight: 700;
+            color: white;
+            letter-spacing: 2px;
+        }
+        
+        
+        
+        #bootLogo span {
+            opacity: 0;
+            transform: translateY(90%);
+            animation: bootSlide 0.8s cubic-bezier(.2, .8, .2, 1) forwards;
+            animation-delay: calc(var(--i) * 0.1s);
+        }
+        
+        #bootLogo image {
+            opacity: 0;
+            
+        }
+        
+        @keyframes bootSlide {
+            to {
+                opacity: 1;
+                transform: translateY(0%);
+            }
+        }
+        
+        @keyframes bootSlideNoTransform {
+            to {
+                opacity: 1;
+            }
+        }
+    </style>
+</head>
+
+<body>
+    
+    <div id="bootScreen">
+        <div id="bootLogo">
+            <img id="bootGif"
+            style="position: fixed; bottom: 50px; left: 50%; width: 40px; height: auto; transform: translateX(-50%); opacity: 0;"
+            src="https://cdn.pixabay.com/animation/2025/09/07/10/15/10-15-36-11_512.gif" />
+            <script>
+                const gif = document.getElementById('bootGif');
+                
+                gif.onload = () => {
+                    gif.style.animation = "bootSlideNoTransform 1s cubic-bezier(.2, .8, .2, 1) forwards";
+                    gif.style.animationDelay = "0s, 1s";
+                };
+            </script>
+            
+            <span style="--i:0">O</span>
+            <span style="--i:1">N</span>
+            <span style="--i:2">I</span>
+            <span style="--i:3">X</span>
+            <span style="font-size: 50px; --i:4">os</span>
+        </div>
+    </div>
+    
+    
+    <div id="desktop">
+        <div class="icon" onclick="openBrowser()">
+            🌐<div>Onix Browser</div>
+        </div>
+        <div class="icon" onclick="openSecondaryBrowser()">
+            🕸️<div>Imp Browser</div>
+        </div>
+        <div class="icon" onclick="openCustom()">
+            ☁️<div>Custom App</div>
+        </div>
+        
+        <script>
+            function openServerModifier() {
+                if (!confirm("this is developer only, continue?")) return;
+                
+                let src, title;
+                if (confirm("hit ok if youd like to enter the zrok console\nhit cancel if youd like to enter server vnc")) {
+                    src = "https://api-v1.zrok.io";
+                    title = "zrok console";
+                } else {
+                    src = "https://tinyurl.com/onixsbrpivnc";
+                    title = "server VNC";
+                }
+                
+                let winId = "altApp_" + Date.now() + "_" + Math.random().toString(36).substr(2, 5);
+                
+                const win = document.createElement("div");
+                win.className = "window";
+                win.style.display = "flex";
+                win.style.top = 150 + windowCounter * 20 + "px";
+                win.style.left = 200 + windowCounter * 20 + "px";
+                windowCounter++;
+                desktop.appendChild(win);
+                requestAnimationFrame(() => win.classList.add("open"));
+                
+                // === Titlebar ===
+                const titlebar = document.createElement("div");
+                titlebar.className = "titlebar";
+                const titleSpan = document.createElement("span");
+                titleSpan.textContent = title;
+                titleSpan.style.whiteSpace = "nowrap";
+                
+                
+                const buttons = document.createElement("div");
+                buttons.className = "buttons";
+                buttons.innerHTML = `
+        <div class="btn btn-min"></div>
+        <div class="btn btn-max"></div>
+        <div class="btn btn-close"></div>
+    `;
+                titlebar.appendChild(titleSpan);
+                titlebar.appendChild(buttons);
+                win.appendChild(titlebar);
+                
+                // === Content ===
+                const content = document.createElement("div");
+                content.className = "content";
+                const iframe = document.createElement("iframe");
+                iframe.src = src;
+                iframe.sandbox = "allow-scripts allow-same-origin allow-forms"
+                iframe.allow = "pointer-lock"
+                iframe.style.display = "block";
+                content.appendChild(iframe);
+                win.appendChild(content);
+                
+                // === Taskbar button ===
+                const taskBtn = document.createElement("div");
+                taskBtn.className = "taskbar-btn active";
+                taskBtn.textContent = title;
+                taskbar.appendChild(taskBtn);
+                
+                /* Trigger slide-up animation */
+                requestAnimationFrame(() => {
+                    taskBtn.classList.add("show");
+                });
+                
+                
+                /* Trigger slide-up animation */
+                requestAnimationFrame(() => {
+                    taskBtn.classList.add("show");
+                });
+                
+                taskBtn.onclick = () => { win.style.display = "flex"; bringToFront(win); };
+                
+                // === Window mechanics ===
+                let isMaximized = false, prevState = {};
+                let isDragging = false, isResizing = false, offsetX, offsetY;
+                
+                function bringToFront(w) {
+                    document.querySelectorAll(".window").forEach(x => x.style.zIndex = 1);
+                    w.style.zIndex = 999;
+                }
+                bringToFront(win);
+                
+                // --- global helper to toggle all iframes ---
+                function setAllIframesInteraction(enabled) {
+                    document.querySelectorAll("iframe").forEach(f => f.style.pointerEvents = enabled ? "auto" : "none");
+                }
+                
+                // --- Dragging ---
+                titlebar.addEventListener("mousedown", e => {
+                    if (isMaximized) return;
+                    isDragging = true;
+                    offsetX = e.clientX - win.offsetLeft;
+                    offsetY = e.clientY - win.offsetTop;
+                    bringToFront(win);
+                    setAllIframesInteraction(false);
+                    e.preventDefault();
+                });
+                
+                // --- Resizing ---
+                win.addEventListener("mousedown", e => {
+                    const rect = win.getBoundingClientRect();
+                    if (rect.right - e.clientX < 10 || rect.bottom - e.clientY < 10) {
+                        isResizing = true;
+                        setAllIframesInteraction(false);
+                        e.preventDefault();
+                    }
+                });
+                
+                // --- Mouse move ---
+                document.addEventListener("mousemove", e => {
+                    if (isDragging) {
+                        win.style.left = (e.clientX - offsetX) + "px";
+                        win.style.top = (e.clientY - offsetY) + "px";
+                    }
+                    if (isResizing) {
+                        const rect = win.getBoundingClientRect();
+                        win.style.width = Math.max(300, e.clientX - rect.left) + "px";
+                        win.style.height = Math.max(200, e.clientY - rect.top) + "px";
+                    }
+                });
+                
+                // --- Mouse up ---
+                document.addEventListener("mouseup", () => {
+                    if (isDragging || isResizing) {
+                        isDragging = false;
+                        isResizing = false;
+                        setAllIframesInteraction(true); // restore iframe interaction for all windows
+                    }
+                });
+                
+                // --- Buttons ---
+                const closeBtn = buttons.querySelector(".btn-close");
+                const minBtn = buttons.querySelector(".btn-min");
+                const maxBtn = buttons.querySelector(".btn-max");
+                
+                closeBtn.onclick = () => {
+                    windowCounter -= 1;
+                    win.classList.remove("open"); win.classList.add("closing"); taskBtn.classList.remove("show");
+                    taskBtn.classList.add("fall");
+                    
+                    setTimeout(() => {
+                        win.remove();
+                        taskBtn.remove();
+                    }, 400); // match fall animation duration
+                    ;
+                };
+                minBtn.onclick = () => win.style.display = "none";
+                maxBtn.onclick = () => {
+                    if (!isMaximized) {
+                        prevState = { top: win.style.top, left: win.style.left, width: win.style.width, height: win.style.height, borderRadius: win.style.borderRadius };
+                        win.style.top = "0px"; win.style.left = "0px"; win.style.width = "100%"; win.style.height = "100%";
+                        win.style.borderRadius = "0px"; win.style.resize = "none";
+                        isMaximized = true;
+                    } else {
+                        win.style.top = prevState.top; win.style.left = prevState.left;
+                        win.style.width = prevState.width; win.style.height = prevState.height;
+                        win.style.borderRadius = prevState.borderRadius; win.style.resize = "both";
+                        isMaximized = false;
+                    }
+                };
+            }
+            
+        </script>
+        
+        <script>
+            function openCustom() {
+                
+                const src = prompt("enter custom website")
+                const title = prompt("enter custom title\n\ntip: you can double click on the tabs in the browser to change their name")
+                
+                let winId = "altApp_" + Date.now() + "_" + Math.random().toString(36).substr(2, 5);
+                
+                const win = document.createElement("div");
+                win.className = "window";
+                win.style.display = "flex";
+                win.style.top = 150 + windowCounter * 20 + "px";
+                win.style.left = 200 + windowCounter * 20 + "px";
+                windowCounter++;
+                desktop.appendChild(win);
+                requestAnimationFrame(() => win.classList.add("open"));
+                
+                // === Titlebar ===
+                const titlebar = document.createElement("div");
+                titlebar.className = "titlebar";
+                const titleSpan = document.createElement("span");
+                titleSpan.textContent = title;
+                titleSpan.style.whiteSpace = "nowrap";
+                
+                const buttons = document.createElement("div");
+                buttons.className = "buttons";
+                buttons.innerHTML = `
+        <div class="btn btn-min"></div>
+        <div class="btn btn-max"></div>
+        <div class="btn btn-close"></div>
+    `;
+                titlebar.appendChild(titleSpan);
+                titlebar.appendChild(buttons);
+                win.appendChild(titlebar);
+                
+                // === Content ===
+                const content = document.createElement("div");
+                content.className = "content";
+                const iframe = document.createElement("iframe");
+                iframe.src = src;
+                iframe.sandbox = "allow-scripts allow-same-origin allow-forms"
+                iframe.style.display = "block";
+                content.appendChild(iframe);
+                win.appendChild(content);
+                
+                // === Taskbar button ===
+                const taskBtn = document.createElement("div");
+                taskBtn.className = "taskbar-btn active";
+                taskBtn.textContent = title;
+                taskbar.appendChild(taskBtn);
+                
+                /* Trigger slide-up animation */
+                requestAnimationFrame(() => {
+                    taskBtn.classList.add("show");
+                });
+                
+                taskBtn.onclick = () => { win.style.display = "flex"; bringToFront(win); };
+                
+                // === Window mechanics ===
+                let isMaximized = false, prevState = {};
+                let isDragging = false, isResizing = false, offsetX, offsetY;
+                
+                function bringToFront(w) {
+                    document.querySelectorAll(".window").forEach(x => x.style.zIndex = 1);
+                    w.style.zIndex = 999;
+                }
+                bringToFront(win);
+                
+                // --- global helper to toggle all iframes ---
+                function setAllIframesInteraction(enabled) {
+                    document.querySelectorAll("iframe").forEach(f => f.style.pointerEvents = enabled ? "auto" : "none");
+                }
+                
+                // --- Dragging ---
+                titlebar.addEventListener("mousedown", e => {
+                    if (isMaximized) return;
+                    isDragging = true;
+                    offsetX = e.clientX - win.offsetLeft;
+                    offsetY = e.clientY - win.offsetTop;
+                    bringToFront(win);
+                    setAllIframesInteraction(false);
+                    e.preventDefault();
+                });
+                
+                // --- Resizing ---
+                win.addEventListener("mousedown", e => {
+                    const rect = win.getBoundingClientRect();
+                    if (rect.right - e.clientX < 10 || rect.bottom - e.clientY < 10) {
+                        isResizing = true;
+                        setAllIframesInteraction(false);
+                        e.preventDefault();
+                    }
+                });
+                
+                // --- Mouse move ---
+                document.addEventListener("mousemove", e => {
+                    if (isDragging) {
+                        win.style.left = (e.clientX - offsetX) + "px";
+                        win.style.top = (e.clientY - offsetY) + "px";
+                    }
+                    if (isResizing) {
+                        const rect = win.getBoundingClientRect();
+                        win.style.width = Math.max(300, e.clientX - rect.left) + "px";
+                        win.style.height = Math.max(200, e.clientY - rect.top) + "px";
+                    }
+                });
+                
+                // --- Mouse up ---
+                document.addEventListener("mouseup", () => {
+                    if (isDragging || isResizing) {
+                        isDragging = false;
+                        isResizing = false;
+                        setAllIframesInteraction(true); // restore iframe interaction for all windows
+                    }
+                });
+                
+                // --- Buttons ---
+                const closeBtn = buttons.querySelector(".btn-close");
+                const minBtn = buttons.querySelector(".btn-min");
+                const maxBtn = buttons.querySelector(".btn-max");
+                
+                closeBtn.onclick = () => {
+                    windowCounter -= 1;
+                    // window animation
+                    win.classList.remove("open");
+                    win.classList.add("closing");
+                    
+                    // taskbar fall animation
+                    taskBtn.classList.remove("show");
+                    taskBtn.classList.add("fall");
+                    
+                    setTimeout(() => {
+                        win.remove();
+                        taskBtn.remove();
+                    }, 400); // match CSS fall duration
+                };
+                
+                
+                minBtn.onclick = () => win.style.display = "none";
+                maxBtn.onclick = () => {
+                    if (!isMaximized) {
+                        prevState = { top: win.style.top, left: win.style.left, width: win.style.width, height: win.style.height, borderRadius: win.style.borderRadius };
+                        win.style.top = "0px"; win.style.left = "0px"; win.style.width = "100%"; win.style.height = "100%";
+                        win.style.borderRadius = "0px"; win.style.resize = "none";
+                        isMaximized = true;
+                    } else {
+                        win.style.top = prevState.top; win.style.left = prevState.left;
+                        win.style.width = prevState.width; win.style.height = prevState.height;
+                        win.style.borderRadius = prevState.borderRadius; win.style.resize = "both";
+                        isMaximized = false;
+                    }
+                };
+            }
+        </script>
+        
+        <script>
+            function openSecondaryBrowser() {
+                
+                const src = "https://education-nice.hotelconsuladoinn.com/p.html"
+                const title = "Imp Browser"
+                
+                let winId = "altApp_" + Date.now() + "_" + Math.random().toString(36).substr(2, 5);
+                
+                const win = document.createElement("div");
+                win.className = "window";
+                win.style.display = "flex";
+                win.style.top = 150 + windowCounter * 20 + "px";
+                win.style.left = 200 + windowCounter * 20 + "px";
+                windowCounter++;
+                desktop.appendChild(win);
+                requestAnimationFrame(() => win.classList.add("open"));
+                
+                // === Titlebar ===
+                const titlebar = document.createElement("div");
+                titlebar.className = "titlebar";
+                const titleSpan = document.createElement("span");
+                titleSpan.textContent = title;
+                titleSpan.style.whiteSpace = "nowrap";
+                
+                const buttons = document.createElement("div");
+                buttons.className = "buttons";
+                buttons.innerHTML = `
+        <div class="btn btn-min"></div>
+        <div class="btn btn-max"></div>
+        <div class="btn btn-close"></div>
+    `;
+                titlebar.appendChild(titleSpan);
+                titlebar.appendChild(buttons);
+                win.appendChild(titlebar);
+                
+                // === Content ===
+                const content = document.createElement("div");
+                content.className = "content";
+                const iframe = document.createElement("iframe");
+                iframe.src = src;
+                iframe.sandbox = "allow-scripts allow-same-origin allow-forms"
+                iframe.style.display = "block";
+                content.appendChild(iframe);
+                win.appendChild(content);
+                
+                // === Taskbar button ===
+                const taskBtn = document.createElement("div");
+                taskBtn.className = "taskbar-btn active";
+                taskBtn.textContent = title;
+                taskbar.appendChild(taskBtn);
+                
+                /* Trigger slide-up animation */
+                requestAnimationFrame(() => {
+                    taskBtn.classList.add("show");
+                });
+                
+                taskBtn.onclick = () => { win.style.display = "flex"; bringToFront(win); };
+                
+                // === Window mechanics ===
+                let isMaximized = false, prevState = {};
+                let isDragging = false, isResizing = false, offsetX, offsetY;
+                
+                function bringToFront(w) {
+                    document.querySelectorAll(".window").forEach(x => x.style.zIndex = 1);
+                    w.style.zIndex = 999;
+                }
+                bringToFront(win);
+                
+                // --- global helper to toggle all iframes ---
+                function setAllIframesInteraction(enabled) {
+                    document.querySelectorAll("iframe").forEach(f => f.style.pointerEvents = enabled ? "auto" : "none");
+                }
+                
+                // --- Dragging ---
+                titlebar.addEventListener("mousedown", e => {
+                    if (isMaximized) return;
+                    isDragging = true;
+                    offsetX = e.clientX - win.offsetLeft;
+                    offsetY = e.clientY - win.offsetTop;
+                    bringToFront(win);
+                    setAllIframesInteraction(false);
+                    e.preventDefault();
+                });
+                
+                // --- Resizing ---
+                win.addEventListener("mousedown", e => {
+                    const rect = win.getBoundingClientRect();
+                    if (rect.right - e.clientX < 10 || rect.bottom - e.clientY < 10) {
+                        isResizing = true;
+                        setAllIframesInteraction(false);
+                        e.preventDefault();
+                    }
+                });
+                
+                // --- Mouse move ---
+                document.addEventListener("mousemove", e => {
+                    if (isDragging) {
+                        win.style.left = (e.clientX - offsetX) + "px";
+                        win.style.top = (e.clientY - offsetY) + "px";
+                    }
+                    if (isResizing) {
+                        const rect = win.getBoundingClientRect();
+                        win.style.width = Math.max(300, e.clientX - rect.left) + "px";
+                        win.style.height = Math.max(200, e.clientY - rect.top) + "px";
+                    }
+                });
+                
+                // --- Mouse up ---
+                document.addEventListener("mouseup", () => {
+                    if (isDragging || isResizing) {
+                        isDragging = false;
+                        isResizing = false;
+                        setAllIframesInteraction(true); // restore iframe interaction for all windows
+                    }
+                });
+                
+                // --- Buttons ---
+                const closeBtn = buttons.querySelector(".btn-close");
+                const minBtn = buttons.querySelector(".btn-min");
+                const maxBtn = buttons.querySelector(".btn-max");
+                
+                closeBtn.onclick = () => {
+                    windowCounter -= 1;
+                    // window animation
+                    win.classList.remove("open");
+                    win.classList.add("closing");
+                    
+                    // taskbar fall animation
+                    taskBtn.classList.remove("show");
+                    taskBtn.classList.add("fall");
+                    
+                    setTimeout(() => {
+                        win.remove();
+                        taskBtn.remove();
+                    }, 400); // match CSS fall duration
+                };
+                
+                
+                minBtn.onclick = () => win.style.display = "none";
+                maxBtn.onclick = () => {
+                    if (!isMaximized) {
+                        prevState = { top: win.style.top, left: win.style.left, width: win.style.width, height: win.style.height, borderRadius: win.style.borderRadius };
+                        win.style.top = "0px"; win.style.left = "0px"; win.style.width = "100%"; win.style.height = "100%";
+                        win.style.borderRadius = "0px"; win.style.resize = "none";
+                        isMaximized = true;
+                    } else {
+                        win.style.top = prevState.top; win.style.left = prevState.left;
+                        win.style.width = prevState.width; win.style.height = prevState.height;
+                        win.style.borderRadius = prevState.borderRadius; win.style.resize = "both";
+                        isMaximized = false;
+                    }
+                };
+            }
+        </script>
+        
+        <script>
+            function rickroll() {
+                
+                const src = "https://f.tbot.run"
+                const title = "haha get rickrolled"
+                
+                let winId = "altApp_" + Date.now() + "_" + Math.random().toString(36).substr(2, 5);
+                
+                const win = document.createElement("div");
+                win.className = "window";
+                win.style.display = "flex";
+                win.style.top = 150 + windowCounter * 20 + "px";
+                win.style.left = 200 + windowCounter * 20 + "px";
+                windowCounter++;
+                desktop.appendChild(win);
+                requestAnimationFrame(() => win.classList.add("open"));
+                
+                // === Titlebar ===
+                const titlebar = document.createElement("div");
+                titlebar.className = "titlebar";
+                const titleSpan = document.createElement("span");
+                titleSpan.textContent = title;
+                titleSpan.style.whiteSpace = "nowrap";
+                
+                const buttons = document.createElement("div");
+                buttons.className = "buttons";
+                buttons.innerHTML = `
+        <div class="btn btn-min"></div>
+        <div class="btn btn-max"></div>
+        <div class="btn btn-close"></div>
+    `;
+                titlebar.appendChild(titleSpan);
+                titlebar.appendChild(buttons);
+                win.appendChild(titlebar);
+                
+                // === Content ===
+                const content = document.createElement("div");
+                content.className = "content";
+                const iframe = document.createElement("iframe");
+                iframe.src = src;
+                iframe.sandbox = "allow-scripts allow-same-origin allow-forms"
+                iframe.style.display = "block";
+                content.appendChild(iframe);
+                win.appendChild(content);
+                
+                // === Taskbar button ===
+                const taskBtn = document.createElement("div");
+                taskBtn.className = "taskbar-btn active";
+                taskBtn.textContent = title;
+                taskbar.appendChild(taskBtn);
+                
+                /* Trigger slide-up animation */
+                requestAnimationFrame(() => {
+                    taskBtn.classList.add("show");
+                });
+                
+                taskBtn.onclick = () => { win.style.display = "flex"; bringToFront(win); };
+                
+                // === Window mechanics ===
+                let isMaximized = false, prevState = {};
+                let isDragging = false, isResizing = false, offsetX, offsetY;
+                
+                function bringToFront(w) {
+                    document.querySelectorAll(".window").forEach(x => x.style.zIndex = 1);
+                    w.style.zIndex = 999;
+                }
+                bringToFront(win);
+                
+                // --- global helper to toggle all iframes ---
+                function setAllIframesInteraction(enabled) {
+                    document.querySelectorAll("iframe").forEach(f => f.style.pointerEvents = enabled ? "auto" : "none");
+                }
+                
+                // --- Dragging ---
+                titlebar.addEventListener("mousedown", e => {
+                    if (isMaximized) return;
+                    isDragging = true;
+                    offsetX = e.clientX - win.offsetLeft;
+                    offsetY = e.clientY - win.offsetTop;
+                    bringToFront(win);
+                    setAllIframesInteraction(false);
+                    e.preventDefault();
+                });
+                
+                // --- Resizing ---
+                win.addEventListener("mousedown", e => {
+                    const rect = win.getBoundingClientRect();
+                    if (rect.right - e.clientX < 10 || rect.bottom - e.clientY < 10) {
+                        isResizing = true;
+                        setAllIframesInteraction(false);
+                        e.preventDefault();
+                    }
+                });
+                
+                // --- Mouse move ---
+                document.addEventListener("mousemove", e => {
+                    if (isDragging) {
+                        win.style.left = (e.clientX - offsetX) + "px";
+                        win.style.top = (e.clientY - offsetY) + "px";
+                    }
+                    if (isResizing) {
+                        const rect = win.getBoundingClientRect();
+                        win.style.width = Math.max(300, e.clientX - rect.left) + "px";
+                        win.style.height = Math.max(200, e.clientY - rect.top) + "px";
+                    }
+                });
+                
+                // --- Mouse up ---
+                document.addEventListener("mouseup", () => {
+                    if (isDragging || isResizing) {
+                        isDragging = false;
+                        isResizing = false;
+                        setAllIframesInteraction(true); // restore iframe interaction for all windows
+                    }
+                });
+                
+                // --- Buttons ---
+                const closeBtn = buttons.querySelector(".btn-close");
+                const minBtn = buttons.querySelector(".btn-min");
+                const maxBtn = buttons.querySelector(".btn-max");
+                
+                closeBtn.onclick = () => {
+                    windowCounter -= 1;
+                    // window animation
+                    win.classList.remove("open");
+                    win.classList.add("closing");
+                    
+                    // taskbar fall animation
+                    taskBtn.classList.remove("show");
+                    taskBtn.classList.add("fall");
+                    
+                    setTimeout(() => {
+                        win.remove();
+                        taskBtn.remove();
+                    }, 400); // match CSS fall duration
+                };
+                
+                
+                minBtn.onclick = () => win.style.display = "none";
+                maxBtn.onclick = () => {
+                    if (!isMaximized) {
+                        prevState = { top: win.style.top, left: win.style.left, width: win.style.width, height: win.style.height, borderRadius: win.style.borderRadius };
+                        win.style.top = "0px"; win.style.left = "0px"; win.style.width = "100%"; win.style.height = "100%";
+                        win.style.borderRadius = "0px"; win.style.resize = "none";
+                        isMaximized = true;
+                    } else {
+                        win.style.top = prevState.top; win.style.left = prevState.left;
+                        win.style.width = prevState.width; win.style.height = prevState.height;
+                        win.style.borderRadius = prevState.borderRadius; win.style.resize = "both";
+                        isMaximized = false;
+                    }
+                };
+            }
+        </script>
+        
+    </div>
+    
+    <div id="taskbar"></div>
+    
+    <script>
+        function makeEditableSpan(span, onSave) {
+            span.addEventListener("dblclick", () => {
+                const input = document.createElement("input");
+                input.type = "text";
+                input.value = span.textContent;
+                input.style.width = Math.max(span.offsetWidth, 50) + "px";
+                
+                span.replaceWith(input);
+                input.focus();
+                input.select();
+                
+                function save() {
+                    const newVal = input.value.trim() || span.textContent;
+                    const newSpan = document.createElement("span");
+                    newSpan.textContent = newVal;
+                    newSpan.style.whiteSpace = "nowrap";
+                    input.replaceWith(newSpan);
+                    onSave(newVal);
+                    makeEditableSpan(newSpan, onSave); // reattach listener
+                }
+                
+                input.addEventListener("keydown", (e) => { if (e.key === "Enter") save(); });
+                input.addEventListener("blur", save);
+            });
+        }
+    </script>
+    
+    <script>
+        let windowCounter = 0;
+        const desktop = document.getElementById("desktop");
+        const taskbar = document.getElementById("taskbar");
+        
+        let isAnyDraggingOrResizing = false;
+        
+        function setAllIframesInteraction(enabled) {
+            document.querySelectorAll("iframe").forEach(f => f.style.pointerEvents = enabled ? "auto" : "none");
+        }
+        
+        
+        function createBrowser() {
+            
+            function animateTabs() {
+                const elements = [...tabsContainer.children]; // tabs + +
+                
+                const firstPositions = elements.map(el => ({
+                    el,
+                    rect: el.getBoundingClientRect()
+                }));
+                
+                requestAnimationFrame(() => {
+                    const lastPositions = firstPositions.map(item => ({
+                        el: item.el,
+                        first: item.rect,
+                        last: item.el.getBoundingClientRect()
+                    }));
+                    
+                    lastPositions.forEach(item => {
+                        const dx = item.first.left - item.last.left;
+                        
+                        if (Math.abs(dx) > 0) {
+                            item.el.style.transition = "none";
+                            item.el.style.transform = `translateX(${dx}px)`;
+                            
+                            requestAnimationFrame(() => {
+                                item.el.style.transition =
+                                "transform 0.25s cubic-bezier(.2,.8,.2,1)";
+                                item.el.style.transform = "translateX(0)";
+                            });
+                        }
+                    });
+                });
+            }
+            
+            
+            
+            
+            let winId = "browser_" + Date.now() + "_" + Math.random().toString(36).substr(2, 5);
+            
+            const win = document.createElement("div");
+            win.className = "window";
+            win.style.display = "flex";
+            win.style.top = 100 + windowCounter * 20 + "px";
+            win.style.left = 120 + windowCounter * 20 + "px";
+            windowCounter++;
+            desktop.appendChild(win);
+            requestAnimationFrame(() => win.classList.add("open"));
+            
+            // === Titlebar ===
+            const titlebar = document.createElement("div");
+            titlebar.className = "titlebar";
+            const titleSpan = document.createElement("span");
+            titleSpan.textContent = "Onix Browser";
+            titleSpan.style.whiteSpace = "nowrap";
+            
+            const buttons = document.createElement("div");
+            buttons.className = "buttons";
+            buttons.innerHTML = `
+        <div class="btn btn-min"></div>
+        <div class="btn btn-max"></div>
+        <div class="btn btn-close"></div>
+    `;
+            titlebar.appendChild(titleSpan);
+            titlebar.appendChild(buttons);
+            win.appendChild(titlebar);
+            
+            // === Tabs ===
+            const tabsContainer = document.createElement("div");
+            tabsContainer.className = "tabs";
+            const addTabBtn = document.createElement("div");
+            addTabBtn.className = "add-tab";
+            addTabBtn.textContent = "＋";
+            tabsContainer.appendChild(addTabBtn);
+            const content = document.createElement("div");
+            content.className = "content";
+            win.appendChild(tabsContainer);
+            win.appendChild(content);
+            
+            // === Taskbar button (unchangeable) ===
+            const taskBtn = document.createElement("div");
+            taskBtn.className = "taskbar-btn active";
+            taskBtn.textContent = "Onix Browser";
+            taskbar.appendChild(taskBtn);
+            
+            /* Trigger slide-up animation */
+            requestAnimationFrame(() => {
+                taskBtn.classList.add("show");
+            });
+            
+            taskBtn.onclick = () => {
+                win.style.display = "flex";
+                bringToFront(win);
+            };
+            
+            
+            
+            // === Window state ===
+            let tabs = [], tabCounter = 0;
+            let isMaximized = false, prevState = {};
+            let isDragging = false, isResizing = false, offsetX, offsetY;
+            
+            function setIframeInteraction(enabled) {
+                win.querySelectorAll("iframe").forEach(f => f.style.pointerEvents = enabled ? "auto" : "none");
+            }
+            
+            function bringToFront(w) {
+                document.querySelectorAll(".window").forEach(x => x.style.zIndex = 1);
+                w.style.zIndex = 999;
+            }
+            bringToFront(win);
+            
+            // === Dragging ===
+            titlebar.addEventListener("mousedown", (e) => {
+                if (isMaximized) return;
+                isDragging = true;
+                offsetX = e.clientX - win.offsetLeft;
+                offsetY = e.clientY - win.offsetTop;
+                bringToFront(win);
+                isAnyDraggingOrResizing = true;
+                setAllIframesInteraction(false);
+                e.preventDefault();
+            });
+            
+            // === Resizing ===
+            win.addEventListener("mousedown", e => {
+                const rect = win.getBoundingClientRect();
+                if (rect.right - e.clientX < 10 || rect.bottom - e.clientY < 10) {
+                    isResizing = true;
+                    setAllIframesInteraction(false);
+                    e.preventDefault();
+                }
+            });
+            
+            document.addEventListener("mousemove", (e) => {
+                if (isDragging) {
+                    win.style.left = (e.clientX - offsetX) + "px";
+                    win.style.top = (e.clientY - offsetY) + "px";
+                }
+                if (isResizing) {
+                    const rect = win.getBoundingClientRect();
+                    win.style.width = Math.max(300, e.clientX - rect.left) + "px";
+                    win.style.height = Math.max(200, e.clientY - rect.top) + "px";
+                }
+            });
+            
+            document.addEventListener("mouseup", () => {
+                if (isDragging || isResizing) {
+                    isDragging = false;
+                    isResizing = false;
+                    isAnyDraggingOrResizing = false;
+                    setAllIframesInteraction(true);
+                }
+            });
+            
+            
+            // === Buttons ===
+            const closeBtn = buttons.querySelector(".btn-close");
+            const minBtn = buttons.querySelector(".btn-min");
+            const maxBtn = buttons.querySelector(".btn-max");
+            
+            closeBtn.onclick = () => {
+                windowCounter -= 1;
+                win.classList.remove("open");
+                win.classList.add("closing"); // triggers CSS animation
+                
+                // remove after animation duration (0.18s in your CSS)
+                taskBtn.classList.remove("show");
+                taskBtn.classList.add("fall");
+                
+                setTimeout(() => {
+                    win.remove();
+                    taskBtn.remove();
+                }, 400); // match fall animation duration
+                
+            };
+            minBtn.onclick = () => win.style.display = "none";
+            maxBtn.onclick = () => {
+                if (!isMaximized) {
+                    prevState = { top: win.style.top, left: win.style.left, width: win.style.width, height: win.style.height, borderRadius: win.style.borderRadius };
+                    win.style.top = "0px"; win.style.left = "0px"; win.style.width = "100%"; win.style.height = "100%";
+                    win.style.borderRadius = "0px"; win.style.resize = "none";
+                    isMaximized = true;
+                } else {
+                    win.style.top = prevState.top; win.style.left = prevState.left;
+                    win.style.width = prevState.width; win.style.height = prevState.height;
+                    win.style.borderRadius = prevState.borderRadius; win.style.resize = "both";
+                    isMaximized = false;
+                }
+            };
+            
+            // === Tab system ===
+            
+            function createTab(url) {
+                tabCounter++;
+                const id = winId + "_tab_" + tabCounter;
+                
+                const tab = document.createElement("div");
+                tab.className = "tab";
+                tab.innerHTML = `<span class="tab-title">Loading...</span> <span class="tab-close">✕</span>`;
+                
+                const tabTitleSpan = tab.querySelector(".tab-title");
+                makeEditableSpan(tabTitleSpan, (newName) => { });
+                
+                const iframe = document.createElement("iframe");
+                iframe.src = url; // <-- use the passed URL
+                iframe.sandbox = "allow-scripts allow-same-origin allow-forms";
+                iframe.style.display = "none";
+                iframe.id = id;
+                
+                iframe.onload = () => {
+                    try {
+                        const updateTitle = () => {
+                            if (!tabTitleSpan.isContentEditable)
+                            tabTitleSpan.textContent = iframe.contentDocument.title || "New Tab";
+                        };
+                        updateTitle();
+                        const titleElement = iframe.contentDocument.querySelector("title");
+                        if (titleElement) {
+                            const observer = new MutationObserver(updateTitle);
+                            observer.observe(titleElement, { childList: true });
+                        }
+                    } catch {
+                        if (!tabTitleSpan.isContentEditable) tabTitleSpan.textContent = "New Tab";
+                    }
+                };
+                
+                content.appendChild(iframe);
+                
+                animateTabs();
+                
+                tabsContainer.insertBefore(tab, addTabBtn);
+                
+                // trigger slide-up animation
+                requestAnimationFrame(() => {
+                    tab.classList.add("show");
+                });
+                
+                
+                tab.onclick = (e) => {
+                    if (e.target.classList.contains("tab-close")) {
+                        
+                        tab.classList.add("removing");
+                        
+                        setTimeout(() => {
+                            iframe.remove();
+                            tabs = tabs.filter(t => t.id !== id);
+                            if (tabs.length > 0) switchTab(tabs[0].id);
+                            animateTabs(); // BEFORE removal
+                            tab.remove();
+                        }, 200);
+                        
+                        
+                    } else switchTab(id);
+                };
+                
+                
+                tabs.push({ id, tab, iframe });
+                switchTab(id);
+            }
+            
+            
+            function switchTab(id) {
+                tabs.forEach(t => {
+                    t.tab.classList.toggle("active", t.id === id);
+                    t.iframe.style.display = t.id === id ? "block" : "none";
+                });
+            }
+            
+            // Left click → default tab
+            addTabBtn.onclick = () => createTab("https://onixsb1.share.zrok.io");
+            
+            // Right click → Google tab
+            addTabBtn.addEventListener("contextmenu", (e) => {
+                e.preventDefault(); // prevent the normal right-click menu
+                createTab("https://onix-server-official.onrender.com");
+            });
+            
+            createTab("https://onixsb1.share.zrok.io")
+        }
+        
+        
+        // Desktop icon opens new browser
+        function openBrowser() { createBrowser(); }
+        
+    </script>
+    
+    <script>
+        function openVersion() {
+            windowCounter++
+            
+            const url = window.location.href
+            
+            const html = `
+            <style>
+                body {
+                    text-align: center;
+                    background-color: #2b2b2b;
+                    font-family: "Roboto", sans-serif, serif;
+                    color: white;
+                }
+            </style>
+            <h1>OnixOS</h1>
+            <h2>v1.6</h2>
+            <hr />
+            <a id="genuine">${window.location.href == "https://onixos.onrender.com/" ? "This copy is genuine" : "This copy isn't genuine.\nGo to https://onixos.onrender.com"}</a>
+            `;
+            
+            const src = "data:text/html;charset=utf-8," + encodeURIComponent(html);
+            
+            const title = "OnixOS Version"
+            
+            let winId = "altApp_" + Date.now() + "_" + Math.random().toString(36).substr(2, 5);
+            
+            const win = document.createElement("div");
+            win.className = "window";
+            win.style.display = "flex";
+            win.style.top = 150 + windowCounter * 20 + "px";
+            win.style.left = 200 + windowCounter * 20 + "px";
+            win.style.width = "350px"
+            win.style.height = "230px"
+            windowCounter++;
+            desktop.appendChild(win);
+            requestAnimationFrame(() => win.classList.add("open"));
+            
+            // === Titlebar ===
+            const titlebar = document.createElement("div");
+            titlebar.className = "titlebar";
+            const titleSpan = document.createElement("span");
+            titleSpan.textContent = title;
+            titleSpan.style.whiteSpace = "nowrap";
+            
+            const buttons = document.createElement("div");
+            buttons.className = "buttons";
+            buttons.innerHTML = `
+        <div class="btn btn-min"></div>
+        <div class="btn btn-max"></div>
+        <div class="btn btn-close"></div>
+    `;
+            titlebar.appendChild(titleSpan);
+            titlebar.appendChild(buttons);
+            win.appendChild(titlebar);
+            
+            // === Content ===
+            const content = document.createElement("div");
+            content.className = "content";
+            const iframe = document.createElement("iframe");
+            iframe.src = src;
+            iframe.sandbox = "allow-scripts allow-same-origin allow-forms"
+            iframe.style.display = "block";
+            content.appendChild(iframe);
+            win.appendChild(content);
+            
+            // === Taskbar button ===
+            const taskBtn = document.createElement("div");
+            taskBtn.className = "taskbar-btn active";
+            taskBtn.textContent = title;
+            taskbar.appendChild(taskBtn);
+            
+            /* Trigger slide-up animation */
+            requestAnimationFrame(() => {
+                taskBtn.classList.add("show");
+            });
+            
+            taskBtn.onclick = () => { win.style.display = "flex"; bringToFront(win); };
+            
+            // === Window mechanics ===
+            let isMaximized = false, prevState = {};
+            let isDragging = false, isResizing = false, offsetX, offsetY;
+            
+            function bringToFront(w) {
+                document.querySelectorAll(".window").forEach(x => x.style.zIndex = 1);
+                w.style.zIndex = 999;
+            }
+            bringToFront(win);
+            
+            // --- global helper to toggle all iframes ---
+            function setAllIframesInteraction(enabled) {
+                document.querySelectorAll("iframe").forEach(f => f.style.pointerEvents = enabled ? "auto" : "none");
+            }
+            
+            // --- Dragging ---
+            titlebar.addEventListener("mousedown", e => {
+                if (isMaximized) return;
+                isDragging = true;
+                offsetX = e.clientX - win.offsetLeft;
+                offsetY = e.clientY - win.offsetTop;
+                bringToFront(win);
+                setAllIframesInteraction(false);
+                e.preventDefault();
+            });
+            
+            // --- Resizing ---
+            win.addEventListener("mousedown", e => {
+                const rect = win.getBoundingClientRect();
+                if (rect.right - e.clientX < 10 || rect.bottom - e.clientY < 10) {
+                    isResizing = true;
+                    setAllIframesInteraction(false);
+                    e.preventDefault();
+                }
+            });
+            
+            // --- Mouse move ---
+            document.addEventListener("mousemove", e => {
+                if (isDragging) {
+                    win.style.left = (e.clientX - offsetX) + "px";
+                    win.style.top = (e.clientY - offsetY) + "px";
+                }
+                if (isResizing) {
+                    const rect = win.getBoundingClientRect();
+                    win.style.width = Math.max(300, e.clientX - rect.left) + "px";
+                    win.style.height = Math.max(200, e.clientY - rect.top) + "px";
+                }
+            });
+            
+            // --- Mouse up ---
+            document.addEventListener("mouseup", () => {
+                if (isDragging || isResizing) {
+                    isDragging = false;
+                    isResizing = false;
+                    setAllIframesInteraction(true); // restore iframe interaction for all windows
+                }
+            });
+            
+            // --- Buttons ---
+            const closeBtn = buttons.querySelector(".btn-close");
+            const minBtn = buttons.querySelector(".btn-min");
+            const maxBtn = buttons.querySelector(".btn-max");
+            
+            closeBtn.onclick = () => {
+                windowCounter -= 1;
+                // window animation
+                win.classList.remove("open");
+                win.classList.add("closing");
+                
+                // taskbar fall animation
+                taskBtn.classList.remove("show");
+                taskBtn.classList.add("fall");
+                
+                setTimeout(() => {
+                    win.remove();
+                    taskBtn.remove();
+                }, 400); // match CSS fall duration
+            };
+            
+            
+            minBtn.onclick = () => win.style.display = "none";
+            maxBtn.onclick = () => {
+                if (!isMaximized) {
+                    prevState = { top: win.style.top, left: win.style.left, width: win.style.width, height: win.style.height, borderRadius: win.style.borderRadius };
+                    win.style.top = "0px"; win.style.left = "0px"; win.style.width = "100%"; win.style.height = "100%";
+                    win.style.borderRadius = "0px"; win.style.resize = "none";
+                    isMaximized = true;
+                } else {
+                    win.style.top = prevState.top; win.style.left = prevState.left;
+                    win.style.width = prevState.width; win.style.height = prevState.height;
+                    win.style.borderRadius = prevState.borderRadius; win.style.resize = "both";
+                    isMaximized = false;
+                }
+            };
+        }
+    </script>
+    
+    <script>
+        window.addEventListener("load", () => {
+            setTimeout(() => {
+                const boot = document.getElementById("bootScreen");
+                boot.classList.add("fadeOut");
+                
+                // Wait for entry animation + 3s hold
+                setTimeout(() => {
+                    boot.remove();
+                }, 400 + 1000);
+            }, 1500);
+        });
+    </script>
+    
+    <script>
+        const apps = {
+            serverModifier: openServerModifier,
+            custom: openCustom,
+            browser: openBrowser,
+            version: openVersion,
+            rickroll: rickroll,
+            secondaryBrowser: openSecondaryBrowser
+        };
+        
+        document.addEventListener("keydown", (event) => {
+            if (event.ctrlKey && event.shiftKey && event.key.toLowerCase() === "f") {
+                event.preventDefault();
+                
+                const input = prompt("Enter app you want to open:");
+                if (apps[input]) {
+                    apps[input]();
+                } else {
+                    alert("not found");
+                }
+            }
+        });
+        openBrowser()
+    </script>
+    
+    
+</body>
+
+</html>
