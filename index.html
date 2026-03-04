@@ -295,6 +295,7 @@
             justify-content: center;
             z-index: 99999;
             transition: opacity 1.5s ease;
+            cursor: none;
         }
         
         #bootScreen.fadeIn {
@@ -305,6 +306,7 @@
         #bootScreen.fadeOut {
             opacity: 0;
             pointer-events: none;
+            cursor: pointer;
         }
         
         #bootLogo {
@@ -1357,7 +1359,7 @@
                 }
             </style>
             <h1>OnixOS</h1>
-            <h2>v1.6</h2>
+            <h2>v1.7</h2>
             <hr />
             <a id="genuine">${window.location.href == "https://onixos.onrender.com/" ? "This copy is genuine" : "This copy isn't genuine.\nGo to https://onixos.onrender.com"}</a>
             `;
@@ -1560,4 +1562,3 @@
 </body>
 
 </html>
-
