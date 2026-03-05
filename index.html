@@ -1261,7 +1261,17 @@
                 makeEditableSpan(tabTitleSpan, (newName) => { });
                 
                 const iframe = document.createElement("iframe");
-                iframe.src = url; // <-- use the passed URL
+                fetch(url, { method: "HEAD" })
+                .then(response => {
+                    if (response.status !== 200) {
+                        openWarning();
+                    }
+                })
+                .catch(() => {
+                    openWarning();
+                });
+                
+                iframe.src = url;
                 iframe.sandbox = "allow-scripts allow-same-origin allow-forms";
                 iframe.style.display = "none";
                 iframe.id = id;
@@ -1520,6 +1530,178 @@
     </script>
     
     <script>
+        function openWarning() {
+            windowCounter++
+            
+            const html = `
+            <style>
+                body {
+                    text-align: center;
+                    background-color: #2b2b2b;
+                    font-family: "Roboto", sans-serif, serif;
+                    color: white;
+                }
+            </style>
+            <h1>Warning</h1>
+            <hr /><a>Onix Browser will throw a bad gateway error when trying to access it outside of school hours.</a>
+            `;
+            
+            const src = "data:text/html;charset=utf-8," + encodeURIComponent(html);
+            
+            const title = "Warning"
+            
+            let winId = "altApp_" + Date.now() + "_" + Math.random().toString(36).substr(2, 5);
+            
+            const win = document.createElement("div");
+            win.className = "window";
+            win.style.display = "flex";
+            win.style.top = 150 + windowCounter * 20 + "px";
+            win.style.left = 200 + windowCounter * 20 + "px";
+            win.style.width = "350px"
+            win.style.height = "230px"
+            windowCounter++;
+            desktop.appendChild(win);
+            requestAnimationFrame(() => win.classList.add("open"));
+            
+            // === Titlebar ===
+            const titlebar = document.createElement("div");
+            titlebar.className = "titlebar";
+            const titleSpan = document.createElement("span");
+            titleSpan.textContent = title;
+            titleSpan.style.whiteSpace = "nowrap";
+            
+            const buttons = document.createElement("div");
+            buttons.className = "buttons";
+            buttons.innerHTML = `
+        <div class="btn btn-min"></div>
+        <div class="btn btn-max"></div>
+        <div class="btn btn-close"></div>
+    `;
+            titlebar.appendChild(titleSpan);
+            titlebar.appendChild(buttons);
+            win.appendChild(titlebar);
+            
+            // === Content ===
+            const content = document.createElement("div");
+            content.className = "content";
+            const iframe = document.createElement("iframe");
+            iframe.src = src;
+            iframe.sandbox = "allow-scripts allow-same-origin allow-forms"
+            iframe.style.display = "block";
+            content.appendChild(iframe);
+            win.appendChild(content);
+            
+            // === Taskbar button ===
+            const taskBtn = document.createElement("div");
+            taskBtn.className = "taskbar-btn active";
+            taskBtn.textContent = title;
+            taskbar.appendChild(taskBtn);
+            
+            /* Trigger slide-up animation */
+            requestAnimationFrame(() => {
+                taskBtn.classList.add("show");
+            });
+            
+            taskBtn.onclick = () => { win.style.display = "flex"; bringToFront(win); };
+            
+            // === Window mechanics ===
+            let isMaximized = false, prevState = {};
+            let isDragging = false, isResizing = false, offsetX, offsetY;
+            
+            function bringToFront(w) {
+                document.querySelectorAll(".window").forEach(x => x.style.zIndex = 1);
+                w.style.zIndex = 999;
+            }
+            bringToFront(win);
+            
+            // --- global helper to toggle all iframes ---
+            function setAllIframesInteraction(enabled) {
+                document.querySelectorAll("iframe").forEach(f => f.style.pointerEvents = enabled ? "auto" : "none");
+            }
+            
+            // --- Dragging ---
+            titlebar.addEventListener("mousedown", e => {
+                if (isMaximized) return;
+                isDragging = true;
+                offsetX = e.clientX - win.offsetLeft;
+                offsetY = e.clientY - win.offsetTop;
+                bringToFront(win);
+                setAllIframesInteraction(false);
+                e.preventDefault();
+            });
+            
+            // --- Resizing ---
+            win.addEventListener("mousedown", e => {
+                const rect = win.getBoundingClientRect();
+                if (rect.right - e.clientX < 10 || rect.bottom - e.clientY < 10) {
+                    isResizing = true;
+                    setAllIframesInteraction(false);
+                    e.preventDefault();
+                }
+            });
+            
+            // --- Mouse move ---
+            document.addEventListener("mousemove", e => {
+                if (isDragging) {
+                    win.style.left = (e.clientX - offsetX) + "px";
+                    win.style.top = (e.clientY - offsetY) + "px";
+                }
+                if (isResizing) {
+                    const rect = win.getBoundingClientRect();
+                    win.style.width = Math.max(300, e.clientX - rect.left) + "px";
+                    win.style.height = Math.max(200, e.clientY - rect.top) + "px";
+                }
+            });
+            
+            // --- Mouse up ---
+            document.addEventListener("mouseup", () => {
+                if (isDragging || isResizing) {
+                    isDragging = false;
+                    isResizing = false;
+                    setAllIframesInteraction(true); // restore iframe interaction for all windows
+                }
+            });
+            
+            // --- Buttons ---
+            const closeBtn = buttons.querySelector(".btn-close");
+            const minBtn = buttons.querySelector(".btn-min");
+            const maxBtn = buttons.querySelector(".btn-max");
+            
+            closeBtn.onclick = () => {
+                windowCounter -= 1;
+                // window animation
+                win.classList.remove("open");
+                win.classList.add("closing");
+                
+                // taskbar fall animation
+                taskBtn.classList.remove("show");
+                taskBtn.classList.add("fall");
+                
+                setTimeout(() => {
+                    win.remove();
+                    taskBtn.remove();
+                }, 400); // match CSS fall duration
+            };
+            
+            
+            minBtn.onclick = () => win.style.display = "none";
+            maxBtn.onclick = () => {
+                if (!isMaximized) {
+                    prevState = { top: win.style.top, left: win.style.left, width: win.style.width, height: win.style.height, borderRadius: win.style.borderRadius };
+                    win.style.top = "0px"; win.style.left = "0px"; win.style.width = "100%"; win.style.height = "100%";
+                    win.style.borderRadius = "0px"; win.style.resize = "none";
+                    isMaximized = true;
+                } else {
+                    win.style.top = prevState.top; win.style.left = prevState.left;
+                    win.style.width = prevState.width; win.style.height = prevState.height;
+                    win.style.borderRadius = prevState.borderRadius; win.style.resize = "both";
+                    isMaximized = false;
+                }
+            };
+        }
+    </script>
+    
+    <script>
         window.addEventListener("load", () => {
             setTimeout(() => {
                 const boot = document.getElementById("bootScreen");
@@ -1540,7 +1722,8 @@
             browser: openBrowser,
             version: openVersion,
             rickroll: rickroll,
-            secondaryBrowser: openSecondaryBrowser
+            secondaryBrowser: openSecondaryBrowser,
+            warning: openWarning
         };
         
         document.addEventListener("keydown", (event) => {
