@@ -8,7 +8,7 @@
             --bg-img: url('https://wallpaperaccess.com/full/1320272.jpg');
             --active: #ffffff;
             --inactive: rgba(255, 255, 255, 0.15);
-            --bg-dark: rgba(10, 10, 10, 0.9);
+            --bg-dark: rgba(10, 10, 10, 0.7);
             --gap: 12px;
             --radius: 12px;
             --speed: 0.4s;
@@ -44,7 +44,7 @@
             z-index: 1;
         }
         
-        .tile:hover { border-color: var(--active); box-shadow: 0 0 20px rgba(255, 255, 255, 0.1); z-index: 5; }
+        .tile:hover { border-color: var(--active); box-shadow: 0 0 20px rgba(255, 255, 255, 0,1); z-index: 5; }
         .tile.no-interact iframe { pointer-events: none !important; }
         
         .tile.just-spawned { animation: hyprPopIn var(--speed) var(--hypr-ease) forwards; }
@@ -97,7 +97,7 @@
         /* Better Terminal Look */
         .term-body { 
             flex: 1; padding: 12px; overflow-y: auto; color: #50fa7b; 
-            font-size: 13px; background: rgba(5, 5, 5, 0.7); 
+            font-size: 13px; background: rgba(5, 5, 5, 0); 
             white-space: pre-wrap; user-select: text;
         }
         .term-line { display: flex; align-items: flex-start; margin-top: 4px; }
@@ -111,7 +111,7 @@
         
         #ws-bar {
             position: fixed; bottom: 25px; left: 50%; transform: translateX(-50%);
-            display: flex; gap: 8px; background: rgba(0,0,0,0.8); padding: 8px 12px;
+            display: flex; gap: 8px; background: rgba(0,0,0,0.7); padding: 8px 12px;
             border-radius: 20px; z-index: 100; backdrop-filter: blur(10px); border: 1px solid #333;
         }
         .ws-dot { width: 6px; height: 6px; border-radius: 50%; background: #333; transition: 0.4s var(--hypr-ease); }
@@ -177,6 +177,31 @@
                 delete target.id; delete target.app; delete target.el;
             }
             tileAll();
+        }
+        
+        function getHardwareInfo() {
+            const info = {
+                cpuCores: navigator.hardwareConcurrency || "Unknown",
+                ram: navigator.deviceMemory ? `${navigator.deviceMemory}GB` : "Unknown",
+                gpu: "Unknown",
+                os: navigator.platform
+            };
+            
+            // Try to get GPU via WebGL
+            try {
+                const canvas = document.createElement('canvas');
+                const gl = canvas.getContext('webgl') || canvas.getContext('experimental-webgl');
+                if (gl) {
+                    const debugInfo = gl.getExtension('WEBGL_debug_renderer_info');
+                    if (debugInfo) {
+                        info.gpu = gl.getParameter(debugInfo.UNMASKED_RENDERER_WEBGL);
+                    }
+                }
+            } catch (e) {
+                info.gpu = "Access Denied";
+            }
+            
+            return info;
         }
         
         function createEl(id, type, custom) {
@@ -276,7 +301,13 @@
                 content.appendChild(tabBar); content.appendChild(iframeContainer);
                 addTab();
             } else if (type === "terminal") {
-                content.innerHTML = `<div class="term-body"><div class="term-history">OnixOS Terminal\nType 'help' for commands.\n</div><div class="term-line"><span class="term-prompt">user@onix:~$</span><input class="term-ghost-input" spellcheck="false" autocomplete="off"></div></div>`;
+                const hw = getHardwareInfo();
+                                    response = `OnixOS v1.1
+CPU: ${hw.cpuCores} cores
+RAM: ~${hw.ram}
+GPU: ${hw.gpu}
+RES: ${window.screen.width}x${window.screen.height}`
+                content.innerHTML = `<div class="term-body"><div class="term-history">${response}\n\nType 'help' to see functions.\n</div><div class="term-line"><span class="term-prompt">>$</span><input class="term-ghost-input" spellcheck="false" autocomplete="off"></div></div>`;
                 const body = content.querySelector('.term-body'), history = content.querySelector('.term-history'), input = content.querySelector('.term-ghost-input');
                 content.onclick = () => input.focus();
                 input.onkeydown = (e) => {
@@ -284,118 +315,130 @@
                         const cmd = input.value; let response = "";
                         if (cmd.trim() !== "") {
                             try {
-                                if (cmd === 'help') response = "Available: spawn(type, custom), kill(), tileAll(), clear";
+                                if (cmd === 'help') response = "Available: spawn(type, custom), kill(), tileAll(), clear, neofetch\nCustom JS scripts could be ran.";
                                 else if (cmd === 'clear') history.innerText = "";
+                                // Inside your terminal's eval logic
+                                else if (cmd === 'neofetch') {
+                                    const hw = getHardwareInfo();
+                                    response = `OnixOS v1.1
+CPU: ${hw.cpuCores} cores
+RAM: ~${hw.ram}
+GPU: ${hw.gpu}
+RES: ${window.screen.width}x${window.screen.height}`;
+                                }
                                 else { let result = eval(cmd); response = result !== undefined ? String(result) : ""; }
                             } catch (err) { response = "Error: " + err.message; }
                             if (cmd !== 'clear') {
-                                history.innerText += `user@onix:~$ ${cmd}${response ? '\n' + response : ''}\n`;
+                                history.innerText += `>$ ${cmd}${response ? '\n' + response : ''}\n`;
                             }
-                        } else { history.innerText += `user@onix:~$ \n`; }
+                        } else { history.innerText += `>$ \n`; }
                         input.value = ''; body.scrollTop = body.scrollHeight;
                     }
                 };
             } else if (type === "introduction") {
                 content.style.color = "white"
                 content.innerHTML = `<div style="text-align: center">
-               <h1>OnixOS Recreated</h1>
+               <h1>OnixOS v1.1</h1>
+               <h4>Tiling window manager inspired by Hyprland but in a web browser!</h4>
                <hr />
                <a>Ctrl+Q - JavaScript Terminal</a><br />
                <a>Ctrl+B - Browser</a><br />
                <a>Ctrl+R - Run application</a><br />
                <a>Ctrl+C - Close app</a><br />
                <a>Ctrl+Holding window / Holding top bar - Move</a><br />
+               <a>Ctrl+0 to Ctrl+10 - Switch workspaces</a><br />
             </div>`
-            } else {
-                if (custom !== undefined) {
-                    content.style.backgroundColor = "white";
-                    content.innerHTML = custom;
                 } else {
-                    content.style.display = "flex"; content.style.justifyContent = "center";
-                    content.style.alignItems = "center";
-                    content.style.color = "white"; content.innerHTML = `<a>App failed to load</a><br /><a>Please add a second option to spawn(\"${type}\")</a><br /><a>Example: spawn(\"${type}\", \"Hello world!\")</a>`;
+                    if (custom !== undefined) {
+                        content.style.backgroundColor = "white";
+                        content.innerHTML = custom;
+                    } else {
+                        content.style.display = "flex"; content.style.justifyContent = "center";
+                        content.style.alignItems = "center";
+                        content.style.color = "white"; content.innerHTML = `<a>App failed to load</a><br /><a>Please add a second option to spawn(\"${type}\")</a><br /><a>Example: spawn(\"${type}\", \"Hello world!\")</a>`;
+                    }
+                }
+                el.appendChild(bar); el.appendChild(content);
+                workspaces[currentWS].el.appendChild(el);
+                return el;
+            }
+            
+            function kill() {
+                const ws = workspaces[currentWS];
+                if (!hoveredId || !ws.tree) return;
+                const target = findNode(ws.tree, hoveredId);
+                if (!target || target.el.classList.contains('closing')) return;
+                const elToKill = target.el;
+                elToKill.classList.add('closing');
+                if (ws.tree.id === hoveredId) ws.tree = null; else ws.tree = removeNodeRecursive(ws.tree, hoveredId);
+                hoveredId = null; tileAll(); 
+                elToKill.onanimationend = (e) => { if (e.animationName === 'hyprPopOut') elToKill.remove(); };
+            }
+            
+            function tileAll() {
+                const ws = workspaces[currentWS];
+                if (ws.tree) updateCoords(ws.tree, 12, 12, window.innerWidth - 24, window.innerHeight - 24);
+            }
+            
+            function updateCoords(node, x, y, w, h) {
+                if (node.type === 'leaf') {
+                    node.el.style.left = `${x}px`; node.el.style.top = `${y}px`;
+                    node.el.style.width = `${w}px`; node.el.style.height = `${h}px`;
+                } else if (node.children) {
+                    const g = 12;
+                    if (node.split === 'h') {
+                        const hw = (w - g) / 2;
+                        updateCoords(node.children[0], x, y, hw, h);
+                        updateCoords(node.children[1], x + hw + g, y, hw, h);
+                    } else {
+                        const hh = (h - g) / 2;
+                        updateCoords(node.children[0], x, y, w, hh);
+                        updateCoords(node.children[1], x, y + hh + g, w, hh);
+                    }
                 }
             }
-            el.appendChild(bar); el.appendChild(content);
-            workspaces[currentWS].el.appendChild(el);
-            return el;
-        }
-        
-        function kill() {
-            const ws = workspaces[currentWS];
-            if (!hoveredId || !ws.tree) return;
-            const target = findNode(ws.tree, hoveredId);
-            if (!target || target.el.classList.contains('closing')) return;
-            const elToKill = target.el;
-            elToKill.classList.add('closing');
-            if (ws.tree.id === hoveredId) ws.tree = null; else ws.tree = removeNodeRecursive(ws.tree, hoveredId);
-            hoveredId = null; tileAll(); 
-            elToKill.onanimationend = (e) => { if (e.animationName === 'hyprPopOut') elToKill.remove(); };
-        }
-        
-        function tileAll() {
-            const ws = workspaces[currentWS];
-            if (ws.tree) updateCoords(ws.tree, 12, 12, window.innerWidth - 24, window.innerHeight - 24);
-        }
-        
-        function updateCoords(node, x, y, w, h) {
-            if (node.type === 'leaf') {
-                node.el.style.left = `${x}px`; node.el.style.top = `${y}px`;
-                node.el.style.width = `${w}px`; node.el.style.height = `${h}px`;
-            } else if (node.children) {
-                const g = 12;
-                if (node.split === 'h') {
-                    const hw = (w - g) / 2;
-                    updateCoords(node.children[0], x, y, hw, h);
-                    updateCoords(node.children[1], x + hw + g, y, hw, h);
-                } else {
-                    const hh = (h - g) / 2;
-                    updateCoords(node.children[0], x, y, w, hh);
-                    updateCoords(node.children[1], x, y + hh + g, w, hh);
-                }
+            
+            function removeNodeRecursive(node, id) {
+                if (!node || node.type === 'leaf') return node;
+                const [l, r] = node.children;
+                if (l.type === 'leaf' && l.id === id) return r;
+                if (r.type === 'leaf' && r.id === id) return l;
+                node.children[0] = removeNodeRecursive(l, id);
+                node.children[1] = removeNodeRecursive(r, id);
+                return node;
             }
-        }
-        
-        function removeNodeRecursive(node, id) {
-            if (!node || node.type === 'leaf') return node;
-            const [l, r] = node.children;
-            if (l.type === 'leaf' && l.id === id) return r;
-            if (r.type === 'leaf' && r.id === id) return l;
-            node.children[0] = removeNodeRecursive(l, id);
-            node.children[1] = removeNodeRecursive(r, id);
-            return node;
-        }
-        
-        function findNode(node, id) {
-            if (!node || !id) return null;
-            if (node.id === id) return node;
-            if (node.type === 'branch') return findNode(node.children[0], id) || findNode(node.children[1], id);
-            return null;
-        }
-        
-        function findFirstLeaf(node) {
-            if (!node) return null;
-            return node.type === 'leaf' ? node : findFirstLeaf(node.children[0]);
-        }
-        
-        window.addEventListener('resize', tileAll);
-        window.addEventListener('keydown', (e) => {
-            if (e.ctrlKey && e.key >= '0' && e.key <= '9') {
-                e.preventDefault();
-                const t = e.key === '0' ? 10 : parseInt(e.key);
-                for (let i = 1; i <= MAX_WS; i++) {
-                    workspaces[i].el.style.transform = `translateX(${(i - t) * 100}%)`;
-                    workspaces[i].el.classList.toggle('active', i === t);
-                    document.querySelector(`.ws-dot-${i}`).classList.toggle('active', i === t);
-                }
-                currentWS = t; hoveredId = null;
+            
+            function findNode(node, id) {
+                if (!node || !id) return null;
+                if (node.id === id) return node;
+                if (node.type === 'branch') return findNode(node.children[0], id) || findNode(node.children[1], id);
+                return null;
             }
-            if (e.ctrlKey && e.key === 'q') { e.preventDefault(); spawn('terminal'); }
-            if (e.ctrlKey && e.key === 'b') { e.preventDefault(); spawn('browser'); }
-            if (e.ctrlKey && e.key === 'c') { e.preventDefault(); kill(); }
-            if (e.ctrlKey && e.key === 'r') { e.preventDefault(); spawn(prompt("Enter app: ")); }
-        });
-        spawn("introduction")
-    </script>
-</body>
-</html>
+            
+            function findFirstLeaf(node) {
+                if (!node) return null;
+                return node.type === 'leaf' ? node : findFirstLeaf(node.children[0]);
+            }
+            
+            window.addEventListener('resize', tileAll);
+            window.addEventListener('keydown', (e) => {
+                if (e.ctrlKey && e.key >= '0' && e.key <= '9') {
+                    e.preventDefault();
+                    const t = e.key === '0' ? 10 : parseInt(e.key);
+                    for (let i = 1; i <= MAX_WS; i++) {
+                        workspaces[i].el.style.transform = `translateX(${(i - t) * 100}%)`;
+                        workspaces[i].el.classList.toggle('active', i === t);
+                        document.querySelector(`.ws-dot-${i}`).classList.toggle('active', i === t);
+                    }
+                    currentWS = t; hoveredId = null;
+                }
+                if (e.ctrlKey && e.key === 'q') { e.preventDefault(); spawn('terminal'); }
+                if (e.ctrlKey && e.key === 'b') { e.preventDefault(); spawn('browser'); }
+                if (e.ctrlKey && e.key === 'c') { e.preventDefault(); kill(); }
+                if (e.ctrlKey && e.key === 'r') { e.preventDefault(); spawn(prompt("Enter app: ")); }
+            });
+            spawn("introduction")
+        </script>
+    </body>
+    </html>
+    
