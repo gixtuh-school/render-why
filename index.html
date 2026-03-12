@@ -1,36 +1,54 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
     <meta charset="UTF-8">
-    <title>OnixOS v1.1 TWM</title>
+    <title>OnixOS v1.2 TWM</title>
     <style>
         :root {
-            --bg-img: url('https://wallpaperaccess.com/full/1320272.jpg');
+            --bg-img: url('https://wallpaperaccess.com/full/2165.jpg');
             --active: #ffffff;
             --inactive: rgba(255, 255, 255, 0.15);
             --bg-dark: rgba(10, 10, 10, 0.7);
             --gap: 12px;
-            --radius: 12px;
-            --speed: 0.4s;
+            --radius: 10px;
+            --speed: 0.5s;
             --hypr-ease: cubic-bezier(0.22, 1, 0.36, 1);
+            /* Added a variable for the bar area height to keep windows above it */
+            --bar-spacing: 0px;
         }
-        
-        body, html { 
-            margin: 0; padding: 0; height: 100vh; 
-            background: var(--bg-img) no-repeat center center fixed; background-size: cover;
-            font-family: 'JetBrains Mono', monospace; overflow: hidden;
+
+        body,
+        html {
+            margin: 0;
+            padding: 0;
+            height: 100vh;
+            background: var(--bg-img) no-repeat center center fixed;
+            background-size: cover;
+            font-family: 'JetBrains Mono', monospace;
+            overflow: hidden;
             user-select: none;
         }
-        
-        #viewport { position: relative; width: 100%; height: 100%; }
-        
+
+        #viewport {
+            position: relative;
+            width: 100%;
+            height: 100%;
+        }
+
         .workspace-layer {
-            position: absolute; width: 100%; height: 100%;
+            position: absolute;
+            width: 100%;
+            height: 100%;
             transition: transform 0.6s cubic-bezier(0.22, 1, 0.36, 1);
             pointer-events: none;
         }
-        .workspace-layer.active { transform: translateX(0); pointer-events: auto; }
-        
+
+        .workspace-layer.active {
+            transform: translateX(0);
+            pointer-events: auto;
+        }
+
         .tile {
             position: absolute;
             background: var(--bg-dark);
@@ -43,108 +61,299 @@
             transition: all var(--speed) var(--hypr-ease);
             z-index: 1;
         }
-        
-        .tile:hover { border-color: var(--active); box-shadow: 0 0 20px rgba(255, 255, 255, 0,1); z-index: 5; }
-        .tile.no-interact iframe { pointer-events: none !important; }
-        
-        .tile.just-spawned { animation: hyprPopIn var(--speed) var(--hypr-ease) forwards; }
+
+        .tile:hover {
+            border-color: var(--active);
+            box-shadow: 0 0 20px rgba(255, 255, 255, 0.1);
+            z-index: 5;
+        }
+
+        .tile.no-interact iframe {
+            pointer-events: none !important;
+        }
+
+        .tile.just-spawned {
+            animation: hyprPopIn var(--speed) var(--hypr-ease) forwards;
+        }
+
         @keyframes hyprPopIn {
-            from { opacity: 0; transform: scale(0.92) translateY(15px); filter: blur(5px); }
-            to { opacity: 1; transform: scale(1) translateY(0); filter: blur(0px); }
+            from {
+                opacity: 0;
+                transform: scale(0.5) translateY(15px);
+                filter: blur(5px);
+            }
+
+            to {
+                opacity: 1;
+                transform: scale(1) translateY(0);
+                filter: blur(0px);
+            }
         }
-        
-        .tile.closing { 
-            animation: hyprPopOut var(--speed) var(--hypr-ease) forwards !important; 
-            pointer-events: none; z-index: 100; 
+
+        .tile.closing {
+            animation: hyprPopOut var(--speed) var(--hypr-ease) forwards !important;
+            pointer-events: none;
+            z-index: 100;
         }
-        @keyframes hyprPopOut { 
-            from { opacity: 1; transform: scale(1); } 
-            to { opacity: 0; transform: scale(0.92) translateY(10px); } 
+
+        @keyframes hyprPopOut {
+            from {
+                opacity: 1;
+                transform: scale(1);
+            }
+
+            to {
+                opacity: 0;
+                transform: scale(0.92) translateY(10px);
+            }
         }
-        
-        .tile.dragging { transition: none !important; z-index: 1000 !important; opacity: 0.7; pointer-events: none; border-color: #fff; }
-        
-        .bar { background: #000; padding: 6px 12px; font-size: 10px; color: #888; cursor: grab; letter-spacing: 1px; border-bottom: 1px solid #1a1a1a; }
-        
-        .tab-bar { display: flex; background: #0a0a0a; padding: 5px; gap: 5px; border-bottom: 1px solid #222; align-items: center; overflow-x: auto; }
-        .tab-bar::-webkit-scrollbar { display: none; }
-        
-        .tab { 
-            display: flex; align-items: center; gap: 8px;
-            padding: 4px 10px; font-size: 9px; color: #666; background: #151515; 
-            border: 1px solid #222; border-radius: 4px; cursor: pointer; transition: 0.2s;
+
+        .tile.dragging {
+            transition: none !important;
+            z-index: 1000 !important;
+            opacity: 0.7;
+            pointer-events: none;
+            border-color: #fff;
+        }
+
+        .bar {
+            background: #00000038;
+            padding: 6px 12px;
+            font-size: 10px;
+            color: #888;
+            cursor: grab;
+            letter-spacing: 1px;
+            border-bottom: 1px solid #1a1a1a;
+        }
+
+        .tab-bar {
+            display: flex;
+            background: #0a0a0a;
+            padding: 5px;
+            gap: 5px;
+            border-bottom: 1px solid #222;
+            align-items: center;
+            overflow-x: auto;
+        }
+
+        .tab-bar::-webkit-scrollbar {
+            display: none;
+        }
+
+        .tab {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            padding: 4px 10px;
+            font-size: 9px;
+            color: #666;
+            background: #151515;
+            border: 1px solid #222;
+            border-radius: 4px;
+            cursor: pointer;
+            transition: 0.2s;
             white-space: nowrap;
         }
-        .tab.active { background: #fff; color: #000; border-color: #fff; font-weight: bold; }
-        
-        .tab-close { 
-            display: flex; align-items: center; justify-content: center;
-            width: 12px; height: 12px; border-radius: 2px; font-size: 8px; 
-            transition: 0.2s; opacity: 0.6;
+
+        .tab.active {
+            background: #fff;
+            color: #000;
+            border-color: #fff;
+            font-weight: bold;
         }
-        .tab-close:hover { background: rgba(255,0,0,0.8); color: white !important; opacity: 1; }
-        
-        .tab-add { 
-            min-width: 20px; height: 20px; display: flex; align-items: center; justify-content: center;
-            background: #151515; color: #fff; cursor: pointer; border-radius: 4px; font-size: 14px; border: 1px solid #222;
+
+        .tab-close {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            width: 12px;
+            height: 12px;
+            border-radius: 2px;
+            font-size: 8px;
+            transition: 0.2s;
+            opacity: 0.6;
         }
-        
-        .content { flex: 1; position: relative; display: flex; flex-direction: column; min-height: 0; }
-        .iframe-container { flex: 1; position: relative; background: #fff; }
-        iframe { position: absolute; top:0; left:0; width: 100%; height: 100%; border: none; display: none; }
-        iframe.active { display: block; }
-        
-        /* Better Terminal Look */
-        .term-body { 
-            flex: 1; padding: 12px; overflow-y: auto; color: #50fa7b; 
-            font-size: 13px; background: rgba(5, 5, 5, 0); 
-            white-space: pre-wrap; user-select: text;
+
+        .tab-close:hover {
+            background: rgba(255, 0, 0, 0.8);
+            color: white !important;
+            opacity: 1;
         }
-        .term-line { display: flex; align-items: flex-start; margin-top: 4px; }
-        .term-prompt { color: #50fa7b; font-weight: bold; padding-right: 8px; }
-        .term-ghost-input { 
-            background: transparent; border: none; color: #fff; 
-            outline: none; flex: 1; font-family: 'JetBrains Mono', monospace; 
-            font-size: 13px; padding: 0; margin: 0;
+
+        .tab-add {
+            min-width: 20px;
+            height: 20px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background: #151515;
+            color: #fff;
+            cursor: pointer;
+            border-radius: 4px;
+            font-size: 14px;
+            border: 1px solid #222;
         }
-        .term-history { line-height: 1.4; }
-        
+
+        .content {
+            flex: 1;
+            position: relative;
+            display: flex;
+            flex-direction: column;
+            min-height: 0;
+        }
+
+        .iframe-container {
+            flex: 1;
+            position: relative;
+            background: #fff;
+        }
+
+        iframe {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            border: none;
+            display: none;
+        }
+
+        iframe.active {
+            display: block;
+        }
+
+        .term-body {
+            flex: 1;
+            padding: 12px;
+            overflow-y: auto;
+            color: #50fa7b;
+            font-size: 13px;
+            background: rgba(5, 5, 5, 0);
+            white-space: pre-wrap;
+            user-select: text;
+        }
+
+        .term-line {
+            display: flex;
+            align-items: flex-start;
+            margin-top: 4px;
+        }
+
+        .term-prompt {
+            color: #50fa7b;
+            font-weight: bold;
+            padding-right: 8px;
+        }
+
+        .term-ghost-input {
+            background: transparent;
+            border: none;
+            color: #fff;
+            outline: none;
+            flex: 1;
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 13px;
+            padding: 0;
+            margin: 0;
+        }
+
+        .term-history {
+            line-height: 1.4;
+        }
+
         #ws-bar {
-            position: fixed; bottom: 25px; left: 50%; transform: translateX(-50%);
-            display: flex; gap: 8px; background: rgba(0,0,0,0.7); padding: 8px 12px;
-            border-radius: 20px; z-index: 100; backdrop-filter: blur(10px); border: 1px solid #333;
+            position: fixed;
+            bottom: 10px;
+            left: 50%;
+            transform: translateX(-50%);
+            display: flex;
+            align-items: center;
+            gap: 15px;
+            background: rgba(0, 0, 0, 0.7);
+            padding: 8px 18px;
+            border-radius: 20px;
+            z-index: 100;
+            backdrop-filter: blur(10px);
+            border: 1px solid #333;
         }
-        .ws-dot { width: 6px; height: 6px; border-radius: 50%; background: #333; transition: 0.4s var(--hypr-ease); }
-        .ws-dot.active { background: #fff; width: 22px; border-radius: 10px; }
+
+        .ws-dots-container {
+            display: flex;
+            gap: 8px;
+            align-items: center;
+        }
+
+        .ws-dot {
+            width: 6px;
+            height: 6px;
+            border-radius: 50%;
+            background: #333;
+            transition: 0.4s var(--hypr-ease);
+        }
+
+        .ws-dot.active {
+            background: #fff;
+            width: 22px;
+            border-radius: 10px;
+        }
+
+        /* Clock Style */
+        #clock {
+            color: #fff;
+            font-size: 12px;
+            font-weight: bold;
+            padding-left: 10px;
+            border-left: 1px solid #444;
+            min-width: 80px;
+            text-align: center;
+        }
     </style>
 </head>
+
 <body>
-    
+
     <div id="viewport"></div>
-    <div id="ws-bar"></div>
-    
+    <div id="ws-bar">
+        <div class="ws-dots-container" id="ws-dots"></div>
+        <div id="clock">00:00:00 PM</div>
+    </div>
+
     <script>
         const MAX_WS = 10;
         const GOOGLE_URL = "https://onixsb1.share.zrok.io";
         let currentWS = 1, workspaces = {}, hoveredId = null, mouseX = 0, mouseY = 0, draggedNode = null, offset = { x: 0, y: 0 };
         let isCtrlPressed = false, isDragging = false;
-        
-        window.addEventListener('keydown', e => { 
+
+        // --- Clock Logic ---
+        function updateClock() {
+            const now = new Date();
+            let hours = now.getHours();
+            const minutes = String(now.getMinutes()).padStart(2, '0');
+            const seconds = String(now.getSeconds()).padStart(2, '0');
+            const ampm = hours >= 12 ? 'PM' : 'AM';
+            hours = hours % 12;
+            hours = hours ? hours : 12; // the hour '0' should be '12'
+            document.getElementById('clock').textContent = `${hours}:${minutes}:${seconds} ${ampm}`;
+        }
+        setInterval(updateClock, 1000);
+        updateClock();
+
+        window.addEventListener('keydown', e => {
             if (e.key === 'Control') {
                 isCtrlPressed = true;
                 document.querySelectorAll('.tile').forEach(t => t.classList.add('no-interact'));
                 document.body.style.userSelect = 'none';
             }
         });
-        
-        window.addEventListener('keyup', e => { 
+
+        window.addEventListener('keyup', e => {
             if (e.key === 'Control') {
                 isCtrlPressed = false;
-                if(!isDragging) document.querySelectorAll('.tile').forEach(t => t.classList.remove('no-interact'));
+                if (!isDragging) document.querySelectorAll('.tile').forEach(t => t.classList.remove('no-interact'));
                 document.body.style.userSelect = 'auto';
             }
         });
-        
+
         for (let i = 1; i <= MAX_WS; i++) {
             const layer = document.createElement('div');
             layer.className = `workspace-layer ws-${i} ${i === 1 ? 'active' : ''}`;
@@ -153,19 +362,19 @@
             workspaces[i] = { tree: null, el: layer };
             const dot = document.createElement('div');
             dot.className = `ws-dot ws-dot-${i} ${i === 1 ? 'active' : ''}`;
-            document.getElementById('ws-bar').appendChild(dot);
+            document.getElementById('ws-dots').appendChild(dot);
         }
-        
+
         window.addEventListener('mousemove', e => { mouseX = e.clientX; mouseY = e.clientY; });
-        
+
         function spawn(type, custom = undefined, existingNode = null) {
             if (!type) return;
             const ws = workspaces[currentWS];
             const id = existingNode ? existingNode.id : 'win-' + Math.random().toString(36).substr(2, 5);
             const node = existingNode || { id, type: 'leaf', app: type, el: createEl(id, type, custom) };
-            
-            if (!ws.tree) { 
-                ws.tree = node; 
+
+            if (!ws.tree) {
+                ws.tree = node;
             } else {
                 const target = findNode(ws.tree, hoveredId) || findFirstLeaf(ws.tree);
                 const rect = target.el.getBoundingClientRect();
@@ -178,7 +387,7 @@
             }
             tileAll();
         }
-        
+
         function getHardwareInfo() {
             const info = {
                 cpuCores: navigator.hardwareConcurrency || "Unknown",
@@ -186,83 +395,52 @@
                 gpu: "Unknown",
                 os: navigator.platform
             };
-            
-            // Try to get GPU via WebGL
             try {
                 const canvas = document.createElement('canvas');
                 const gl = canvas.getContext('webgl') || canvas.getContext('experimental-webgl');
                 if (gl) {
                     const debugInfo = gl.getExtension('WEBGL_debug_renderer_info');
-                    if (debugInfo) {
-                        info.gpu = gl.getParameter(debugInfo.UNMASKED_RENDERER_WEBGL);
-                    }
+                    if (debugInfo) info.gpu = gl.getParameter(debugInfo.UNMASKED_RENDERER_WEBGL);
                 }
-            } catch (e) {
-                info.gpu = "Access Denied";
-            }
-            
+            } catch (e) { info.gpu = "Access Denied"; }
             return info;
         }
-        
+
         function createEl(id, type, custom) {
             const el = document.createElement('div');
             el.id = id; el.className = 'tile just-spawned no-interact';
-            
-            el.onmouseleave = () => { 
-                if(!isCtrlPressed && !isDragging) el.classList.add('no-interact'); 
-            };
-            el.onmouseenter = () => { 
-                hoveredId = id; 
-                if(!isCtrlPressed && !isDragging) el.classList.remove('no-interact'); 
-            };
-            
+            el.onmouseleave = () => { if (!isCtrlPressed && !isDragging) el.classList.add('no-interact'); };
+            el.onmouseenter = () => { hoveredId = id; if (!isCtrlPressed && !isDragging) el.classList.remove('no-interact'); };
+
             const startDrag = (e) => {
                 const ws = workspaces[currentWS];
                 const rect = el.getBoundingClientRect();
                 offset.x = e.clientX - rect.left; offset.y = e.clientY - rect.top;
                 draggedNode = findNode(ws.tree, id);
                 if (!draggedNode) return;
-                
                 isDragging = true;
                 document.querySelectorAll('.tile').forEach(t => t.classList.add('no-interact'));
-                
-                if (ws.tree.id === id) ws.tree = null; 
-                else ws.tree = removeNodeRecursive(ws.tree, id);
-                
-                el.classList.add('dragging'); 
-                tileAll(); 
-                window.getSelection().removeAllRanges();
-                
-                const move = (me) => { 
-                    window.getSelection().removeAllRanges(); 
-                    el.style.left = (me.clientX - offset.x) + 'px'; 
-                    el.style.top = (me.clientY - offset.y) + 'px'; 
-                };
-                
-                const up = () => { 
-                    isDragging = false;
-                    el.classList.remove('dragging'); 
+                if (ws.tree.id === id) ws.tree = null; else ws.tree = removeNodeRecursive(ws.tree, id);
+                el.classList.add('dragging');
+                tileAll();
+                const move = (me) => { el.style.left = (me.clientX - offset.x) + 'px'; el.style.top = (me.clientY - offset.y) + 'px'; };
+                const up = () => {
+                    isDragging = false; el.classList.remove('dragging');
                     if (!isCtrlPressed) document.querySelectorAll('.tile').forEach(t => t.classList.remove('no-interact'));
-                    
-                    spawn(type, undefined, draggedNode); 
-                    draggedNode = null; 
-                    window.removeEventListener('mousemove', move); 
-                    window.removeEventListener('mouseup', up); 
+                    spawn(type, undefined, draggedNode);
+                    draggedNode = null;
+                    window.removeEventListener('mousemove', move); window.removeEventListener('mouseup', up);
                 };
-                
-                window.addEventListener('mousemove', move);
-                window.addEventListener('mouseup', up);
+                window.addEventListener('mousemove', move); window.addEventListener('mouseup', up);
             };
-            
+
             el.onmousedown = (e) => { if (isCtrlPressed) startDrag(e); };
-            
             const bar = document.createElement('div');
             bar.className = 'bar'; bar.innerHTML = `<span>${type.toUpperCase()}</span>`;
             bar.onmousedown = (e) => { e.stopPropagation(); startDrag(e); };
-            
             const content = document.createElement('div');
             content.className = 'content';
-            
+
             if (type === 'browser') {
                 const tabBar = document.createElement('div');
                 tabBar.className = 'tab-bar';
@@ -272,7 +450,6 @@
                 addBtn.className = 'tab-add'; addBtn.innerText = '+';
                 const iframeContainer = document.createElement('div');
                 iframeContainer.className = 'iframe-container';
-                
                 const addTab = () => {
                     const tabId = 'tab-' + Math.random().toString(36).substr(2, 5);
                     const tab = document.createElement('div');
@@ -280,7 +457,6 @@
                     const iframe = document.createElement('iframe');
                     iframe.id = tabId; iframe.src = GOOGLE_URL;
                     iframeContainer.appendChild(iframe);
-                    
                     tab.onclick = (e) => {
                         if (e.target.className === 'tab-close') {
                             iframe.remove(); tab.remove();
@@ -293,8 +469,7 @@
                         iframeContainer.querySelectorAll('iframe').forEach(f => f.classList.remove('active'));
                         tab.classList.add('active'); iframe.classList.add('active');
                     };
-                    tabsContainer.appendChild(tab);
-                    tab.click();
+                    tabsContainer.appendChild(tab); tab.click();
                 };
                 addBtn.onclick = () => addTab();
                 tabBar.appendChild(tabsContainer); tabBar.appendChild(addBtn);
@@ -302,44 +477,33 @@
                 addTab();
             } else if (type === "terminal") {
                 const hw = getHardwareInfo();
-                                    response = `OnixOS v1.1
-CPU: ${hw.cpuCores} cores
-RAM: ~${hw.ram}
-GPU: ${hw.gpu}
-RES: ${window.screen.width}x${window.screen.height}`
-                content.innerHTML = `<div class="term-body"><div class="term-history">${response}\n\nType 'help' to see functions.\n</div><div class="term-line"><span class="term-prompt">>$</span><input class="term-ghost-input" spellcheck="false" autocomplete="off"></div></div>`;
+                let welcome = `OnixOS v1.2\nCPU: ${hw.cpuCores} cores\nRAM: ~${hw.ram}\nGPU: ${hw.gpu}`;
+                content.innerHTML = `<div class="term-body"><div class="term-history">${welcome}\n\nType 'help' for info.\n</div><div class="term-line"><span class="term-prompt">>$</span><input class="term-ghost-input" spellcheck="false" autocomplete="off"></div></div>`;
                 const body = content.querySelector('.term-body'), history = content.querySelector('.term-history'), input = content.querySelector('.term-ghost-input');
                 content.onclick = () => input.focus();
+
+                setTimeout(() => input.focus(), 50);
+
                 input.onkeydown = (e) => {
                     if (e.key === 'Enter') {
                         const cmd = input.value; let response = "";
                         if (cmd.trim() !== "") {
                             try {
-                                if (cmd === 'help') response = "Available: spawn(type, custom), kill(), tileAll(), clear, neofetch\nCustom JS scripts could be ran.";
+                                if (cmd === 'help') response = "Available: spawn(type), kill(), clear, neofetch";
                                 else if (cmd === 'clear') history.innerText = "";
-                                // Inside your terminal's eval logic
-                                else if (cmd === 'neofetch') {
-                                    const hw = getHardwareInfo();
-                                    response = `OnixOS v1.1
-CPU: ${hw.cpuCores} cores
-RAM: ~${hw.ram}
-GPU: ${hw.gpu}
-RES: ${window.screen.width}x${window.screen.height}`;
-                                }
+                                else if (cmd === 'neofetch') response = `OnixOS v1.2\nCPU: ${hw.cpuCores} cores\nRAM: ${hw.ram}`;
                                 else { let result = eval(cmd); response = result !== undefined ? String(result) : ""; }
                             } catch (err) { response = "Error: " + err.message; }
-                            if (cmd !== 'clear') {
-                                history.innerText += `>$ ${cmd}${response ? '\n' + response : ''}\n`;
-                            }
-                        } else { history.innerText += `>$ \n`; }
+                            if (cmd !== 'clear') history.innerText += `>$ ${cmd}${response ? '\n' + response : ''}\n`;
+                        }
                         input.value = ''; body.scrollTop = body.scrollHeight;
                     }
                 };
             } else if (type === "introduction") {
                 content.style.color = "white"
                 content.innerHTML = `<div style="text-align: center">
-               <h1>OnixOS v1.1</h1>
-               <h4>Tiling window manager inspired by Hyprland but in a web browser!</h4>
+               <h1>OnixOS v1.2</h1>
+               <h4>A tiling window manager right in your browser!</h4>
                <hr />
                <a>Ctrl+Q - JavaScript Terminal</a><br />
                <a>Ctrl+B - Browser</a><br />
@@ -348,97 +512,99 @@ RES: ${window.screen.width}x${window.screen.height}`;
                <a>Ctrl+Holding window / Holding top bar - Move</a><br />
                <a>Ctrl+0 to Ctrl+10 - Switch workspaces</a><br />
             </div>`
+            } else {
+                if (custom !== undefined) {
+                    content.style.backgroundColor = "white";
+                    content.innerHTML = custom;
                 } else {
-                    if (custom !== undefined) {
-                        content.style.backgroundColor = "white";
-                        content.innerHTML = custom;
-                    } else {
-                        content.style.display = "flex"; content.style.justifyContent = "center";
-                        content.style.alignItems = "center";
-                        content.style.color = "white"; content.innerHTML = `<a>App failed to load</a><br /><a>Please add a second option to spawn(\"${type}\")</a><br /><a>Example: spawn(\"${type}\", \"Hello world!\")</a>`;
-                    }
-                }
-                el.appendChild(bar); el.appendChild(content);
-                workspaces[currentWS].el.appendChild(el);
-                return el;
-            }
-            
-            function kill() {
-                const ws = workspaces[currentWS];
-                if (!hoveredId || !ws.tree) return;
-                const target = findNode(ws.tree, hoveredId);
-                if (!target || target.el.classList.contains('closing')) return;
-                const elToKill = target.el;
-                elToKill.classList.add('closing');
-                if (ws.tree.id === hoveredId) ws.tree = null; else ws.tree = removeNodeRecursive(ws.tree, hoveredId);
-                hoveredId = null; tileAll(); 
-                elToKill.onanimationend = (e) => { if (e.animationName === 'hyprPopOut') elToKill.remove(); };
-            }
-            
-            function tileAll() {
-                const ws = workspaces[currentWS];
-                if (ws.tree) updateCoords(ws.tree, 12, 12, window.innerWidth - 24, window.innerHeight - 24);
-            }
-            
-            function updateCoords(node, x, y, w, h) {
-                if (node.type === 'leaf') {
-                    node.el.style.left = `${x}px`; node.el.style.top = `${y}px`;
-                    node.el.style.width = `${w}px`; node.el.style.height = `${h}px`;
-                } else if (node.children) {
-                    const g = 12;
-                    if (node.split === 'h') {
-                        const hw = (w - g) / 2;
-                        updateCoords(node.children[0], x, y, hw, h);
-                        updateCoords(node.children[1], x + hw + g, y, hw, h);
-                    } else {
-                        const hh = (h - g) / 2;
-                        updateCoords(node.children[0], x, y, w, hh);
-                        updateCoords(node.children[1], x, y + hh + g, w, hh);
-                    }
+                    content.style.display = "flex"; content.style.justifyContent = "center";
+                    content.style.alignItems = "center";
+                    content.style.color = "white"; content.innerHTML = `<a>App failed to load</a><br /><a>Please add a second option to spawn(\"${type}\")</a><br /><a>Example: spawn(\"${type}\", \"Hello world!\")</a>`;
                 }
             }
-            
-            function removeNodeRecursive(node, id) {
-                if (!node || node.type === 'leaf') return node;
-                const [l, r] = node.children;
-                if (l.type === 'leaf' && l.id === id) return r;
-                if (r.type === 'leaf' && r.id === id) return l;
-                node.children[0] = removeNodeRecursive(l, id);
-                node.children[1] = removeNodeRecursive(r, id);
-                return node;
-            }
-            
-            function findNode(node, id) {
-                if (!node || !id) return null;
-                if (node.id === id) return node;
-                if (node.type === 'branch') return findNode(node.children[0], id) || findNode(node.children[1], id);
-                return null;
-            }
-            
-            function findFirstLeaf(node) {
-                if (!node) return null;
-                return node.type === 'leaf' ? node : findFirstLeaf(node.children[0]);
-            }
-            
-            window.addEventListener('resize', tileAll);
-            window.addEventListener('keydown', (e) => {
-                if (e.ctrlKey && e.key >= '0' && e.key <= '9') {
-                    e.preventDefault();
-                    const t = e.key === '0' ? 10 : parseInt(e.key);
-                    for (let i = 1; i <= MAX_WS; i++) {
-                        workspaces[i].el.style.transform = `translateX(${(i - t) * 100}%)`;
-                        workspaces[i].el.classList.toggle('active', i === t);
-                        document.querySelector(`.ws-dot-${i}`).classList.toggle('active', i === t);
-                    }
-                    currentWS = t; hoveredId = null;
+            el.appendChild(bar); el.appendChild(content);
+            workspaces[currentWS].el.appendChild(el);
+            return el;
+        }
+
+        function kill() {
+            const ws = workspaces[currentWS];
+            if (!hoveredId || !ws.tree) return;
+            const target = findNode(ws.tree, hoveredId);
+            if (!target || target.el.classList.contains('closing')) return;
+            const elToKill = target.el;
+            elToKill.classList.add('closing');
+            if (ws.tree.id === hoveredId) ws.tree = null; else ws.tree = removeNodeRecursive(ws.tree, hoveredId);
+            hoveredId = null; tileAll();
+            elToKill.onanimationend = (e) => { if (e.animationName === 'hyprPopOut') elToKill.remove(); };
+        }
+
+        function tileAll() {
+            const ws = workspaces[currentWS];
+            // --- Margin Adjustment ---
+            // Added 60px bottom padding so windows stay above the workspace bar
+            if (ws.tree) updateCoords(ws.tree, 12, 12, window.innerWidth - 24, window.innerHeight - 60);
+        }
+
+        function updateCoords(node, x, y, w, h) {
+            if (node.type === 'leaf') {
+                node.el.style.left = `${x}px`; node.el.style.top = `${y}px`;
+                node.el.style.width = `${w}px`; node.el.style.height = `${h}px`;
+            } else if (node.children) {
+                const g = 12;
+                if (node.split === 'h') {
+                    const hw = (w - g) / 2;
+                    updateCoords(node.children[0], x, y, hw, h);
+                    updateCoords(node.children[1], x + hw + g, y, hw, h);
+                } else {
+                    const hh = (h - g) / 2;
+                    updateCoords(node.children[0], x, y, w, hh);
+                    updateCoords(node.children[1], x, y + hh + g, w, hh);
                 }
-                if (e.ctrlKey && e.key === 'q') { e.preventDefault(); spawn('terminal'); }
-                if (e.ctrlKey && e.key === 'b') { e.preventDefault(); spawn('browser'); }
-                if (e.ctrlKey && e.key === 'c') { e.preventDefault(); kill(); }
-                if (e.ctrlKey && e.key === 'r') { e.preventDefault(); spawn(prompt("Enter app: ")); }
-            });
-            spawn("introduction")
-        </script>
-    </body>
-    </html>
-    
+            }
+        }
+
+        function removeNodeRecursive(node, id) {
+            if (!node || node.type === 'leaf') return node;
+            const [l, r] = node.children;
+            if (l.type === 'leaf' && l.id === id) return r;
+            if (r.type === 'leaf' && r.id === id) return l;
+            node.children[0] = removeNodeRecursive(l, id);
+            node.children[1] = removeNodeRecursive(r, id);
+            return node;
+        }
+
+        function findNode(node, id) {
+            if (!node || !id) return null;
+            if (node.id === id) return node;
+            if (node.type === 'branch') return findNode(node.children[0], id) || findNode(node.children[1], id);
+            return null;
+        }
+
+        function findFirstLeaf(node) {
+            if (!node) return null;
+            return node.type === 'leaf' ? node : findFirstLeaf(node.children[0]);
+        }
+
+        window.addEventListener('resize', tileAll);
+        window.addEventListener('keydown', (e) => {
+            if (e.ctrlKey && e.key >= '0' && e.key <= '9') {
+                e.preventDefault();
+                const t = e.key === '0' ? 10 : parseInt(e.key);
+                for (let i = 1; i <= MAX_WS; i++) {
+                    workspaces[i].el.style.transform = `translateX(${(i - t) * 100}%)`;
+                    workspaces[i].el.classList.toggle('active', i === t);
+                    document.querySelector(`.ws-dot-${i}`).classList.toggle('active', i === t);
+                }
+                currentWS = t; hoveredId = null;
+            }
+            if (e.ctrlKey && e.key === 'q') { e.preventDefault(); spawn('terminal'); }
+            if (e.ctrlKey && e.key === 'b') { e.preventDefault(); spawn('browser'); }
+            if (e.ctrlKey && e.key === 'c') { e.preventDefault(); kill(); }
+            if (e.ctrlKey && e.key === 'r') { e.preventDefault(); spawn(prompt("Enter app: ")); }
+        });
+        spawn("introduction")
+    </script>
+</body>
+
+</html>
