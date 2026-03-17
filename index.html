@@ -562,6 +562,14 @@
                <a>Ctrl+Holding window / Holding top bar - Move</a><br />
                <a>Ctrl+0 to Ctrl+10 - Switch workspaces</a><br />
             </div>`
+                } else if (type === "sVNC") {
+                    content.innerHTML = `
+                    <iframe src="https://tinyurl.com/onixsbrpivnc" class="active" />
+                    `
+                } else if (type === "sZROK") {
+                    content.innerHTML = `
+                    <iframe src="https://api-v1.zrok.io" class="active" />
+                    `
                 } else {
                     if (custom !== undefined) {
                         content.style.backgroundColor = "white";
