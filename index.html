@@ -3,7 +3,7 @@
 
 <head>
     <meta charset="UTF-8">
-    <title>OnixOS v1.3.1 TWM</title>
+    <title>OnixOS v1.3.2 TWM</title>
     <style>
         :root {
             --bg-img: url('https://wallpaperaccess.com/full/2165.jpg');
@@ -471,8 +471,14 @@
             };
             el.onmousedown = (e) => { 
                 if (isCtrlPressed) {
-                    e.preventDefault(); // This is the magic line that stops the selection from even starting
-                    startDrag(e); 
+                    // Check if the user clicked an input or something editable
+                    const isInput = e.target.tagName === 'INPUT' || e.target.closest('.term-history');
+                    
+                    // If they are holding Ctrl BUT NOT clicking text areas, allow the drag fix
+                    if (!isInput) {
+                        e.preventDefault(); 
+                        startDrag(e); 
+                    }
                 }
             };
             const bar = document.createElement('div');
@@ -517,7 +523,7 @@
                 addTab();
             } else if (type === "terminal") {
                 const hw = getHardwareInfo();
-                let welcome = `OnixOS v1.3.1\nCPU: ${hw.cpuCores} cores\nRAM: ~${hw.ram}\nGPU: ${hw.gpu}`;
+                let welcome = `OnixOS v1.3.2\nCPU: ${hw.cpuCores} cores\nRAM: ~${hw.ram}\nGPU: ${hw.gpu}`;
                 content.innerHTML = `<div class="term-body"><div class="term-history">${welcome}\n\nType 'help' for info.\n</div><div class="term-line"><span class="term-prompt">>$</span><input class="term-ghost-input" spellcheck="false" autocomplete="off"></div></div>`;
                 const body = content.querySelector('.term-body'), history = content.querySelector('.term-history'), input = content.querySelector('.term-ghost-input');
                 content.onclick = () => input.focus();
@@ -525,13 +531,17 @@
                 setTimeout(() => input.focus(), 50);
                 
                 input.onkeydown = (e) => {
+                    if (e.ctrlKey && e.key === 'a') {
+                        e.preventDefault(); // Stop the browser from selecting the whole page
+                        input.select();    // Select only the text inside this specific input
+                    }
                     if (e.key === 'Enter') {
                         const cmd = input.value; let response = "";
                         if (cmd.trim() !== "") {
                             try {
                                 if (cmd === 'help') response = "Available: spawn(type), kill(), clear, neofetch";
                                 else if (cmd === 'clear') history.innerText = "";
-                                else if (cmd === 'neofetch') response = `OnixOS v1.3.1\nCPU: ${hw.cpuCores} cores\nRAM: ${hw.ram}\nGPU: ${hw.gpu}`;
+                                else if (cmd === 'neofetch') response = `OnixOS v1.3.2\nCPU: ${hw.cpuCores} cores\nRAM: ${hw.ram}\nGPU: ${hw.gpu}`;
                                 else { let result = eval(cmd); response = result !== undefined ? String(result) : ""; }
                             } catch (err) { response = "Error: " + err.message; }
                             if (cmd !== 'clear') history.innerText += `>$ ${cmd}${response ? '\n' + response : ''}\n`;
@@ -542,7 +552,7 @@
             } else if (type === "introduction") {
                 content.style.color = "white"
                 content.innerHTML = `<div style="text-align: center">
-               <h1>OnixOS v1.3.1</h1>
+               <h1>OnixOS v1.3.2</h1>
                <h4>A tiling window manager right in your browser!</h4>
                <hr />
                <a>Ctrl+Q - JavaScript Terminal</a><br />
