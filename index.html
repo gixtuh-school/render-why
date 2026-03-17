@@ -3,7 +3,7 @@
 
 <head>
     <meta charset="UTF-8">
-    <title>OnixOS v1.2 TWM</title>
+    <title>OnixOS v1.3 TWM</title>
     <style>
         :root {
             --bg-img: url('https://wallpaperaccess.com/full/2165.jpg');
@@ -14,7 +14,6 @@
             --radius: 10px;
             --speed: 0.5s;
             --hypr-ease: cubic-bezier(0.22, 1, 0.36, 1);
-            /* Added a variable for the bar area height to keep windows above it */
             --bar-spacing: 0px;
         }
 
@@ -265,6 +264,7 @@
             position: fixed;
             bottom: 10px;
             left: 50%;
+            /* Modified transform to accommodate the entrance animation */
             transform: translateX(-50%);
             display: flex;
             align-items: center;
@@ -275,6 +275,19 @@
             z-index: 100;
             backdrop-filter: blur(10px);
             border: 1px solid #333;
+            /* Added Entrance Animation */
+            animation: barSlideUp 0.8s var(--hypr-ease) forwards;
+        }
+
+        @keyframes barSlideUp {
+            from {
+                transform: translateX(-50%) translateY(100px);
+                opacity: 0;
+            }
+            to {
+                transform: translateX(-50%) translateY(0);
+                opacity: 1;
+            }
         }
 
         .ws-dots-container {
@@ -297,7 +310,6 @@
             border-radius: 10px;
         }
 
-        /* Clock Style */
         #clock {
             color: #fff;
             font-size: 12px;
@@ -324,7 +336,6 @@
         let currentWS = 1, workspaces = {}, hoveredId = null, mouseX = 0, mouseY = 0, draggedNode = null, offset = { x: 0, y: 0 };
         let isCtrlPressed = false, isDragging = false;
 
-        // --- Clock Logic ---
         function updateClock() {
             const now = new Date();
             let hours = now.getHours();
@@ -332,7 +343,7 @@
             const seconds = String(now.getSeconds()).padStart(2, '0');
             const ampm = hours >= 12 ? 'PM' : 'AM';
             hours = hours % 12;
-            hours = hours ? hours : 12; // the hour '0' should be '12'
+            hours = hours ? hours : 12;
             document.getElementById('clock').textContent = `${hours}:${minutes}:${seconds} ${ampm}`;
         }
         setInterval(updateClock, 1000);
@@ -343,6 +354,8 @@
                 isCtrlPressed = true;
                 document.querySelectorAll('.tile').forEach(t => t.classList.add('no-interact'));
                 document.body.style.userSelect = 'none';
+                // Clear text selection
+                window.getSelection().removeAllRanges();
             }
         });
 
@@ -477,7 +490,7 @@
                 addTab();
             } else if (type === "terminal") {
                 const hw = getHardwareInfo();
-                let welcome = `OnixOS v1.2\nCPU: ${hw.cpuCores} cores\nRAM: ~${hw.ram}\nGPU: ${hw.gpu}`;
+                let welcome = `OnixOS v1.3\nCPU: ${hw.cpuCores} cores\nRAM: ~${hw.ram}\nGPU: ${hw.gpu}`;
                 content.innerHTML = `<div class="term-body"><div class="term-history">${welcome}\n\nType 'help' for info.\n</div><div class="term-line"><span class="term-prompt">>$</span><input class="term-ghost-input" spellcheck="false" autocomplete="off"></div></div>`;
                 const body = content.querySelector('.term-body'), history = content.querySelector('.term-history'), input = content.querySelector('.term-ghost-input');
                 content.onclick = () => input.focus();
@@ -491,7 +504,7 @@
                             try {
                                 if (cmd === 'help') response = "Available: spawn(type), kill(), clear, neofetch";
                                 else if (cmd === 'clear') history.innerText = "";
-                                else if (cmd === 'neofetch') response = `OnixOS v1.2\nCPU: ${hw.cpuCores} cores\nRAM: ${hw.ram}`;
+                                else if (cmd === 'neofetch') response = `OnixOS v1.3\nCPU: ${hw.cpuCores} cores\nRAM: ${hw.ram}\nGPU: ${hw.gpu}`;
                                 else { let result = eval(cmd); response = result !== undefined ? String(result) : ""; }
                             } catch (err) { response = "Error: " + err.message; }
                             if (cmd !== 'clear') history.innerText += `>$ ${cmd}${response ? '\n' + response : ''}\n`;
@@ -502,7 +515,7 @@
             } else if (type === "introduction") {
                 content.style.color = "white"
                 content.innerHTML = `<div style="text-align: center">
-               <h1>OnixOS v1.2</h1>
+               <h1>OnixOS v1.3</h1>
                <h4>A tiling window manager right in your browser!</h4>
                <hr />
                <a>Ctrl+Q - JavaScript Terminal</a><br />
@@ -541,8 +554,6 @@
 
         function tileAll() {
             const ws = workspaces[currentWS];
-            // --- Margin Adjustment ---
-            // Added 60px bottom padding so windows stay above the workspace bar
             if (ws.tree) updateCoords(ws.tree, 12, 12, window.innerWidth - 24, window.innerHeight - 60);
         }
 
