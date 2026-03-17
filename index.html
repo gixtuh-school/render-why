@@ -3,7 +3,7 @@
 
 <head>
     <meta charset="UTF-8">
-    <title>OnixOS v1.3 TWM</title>
+    <title>OnixOS v1.3.1 TWM</title>
     <style>
         :root {
             --bg-img: url('https://wallpaperaccess.com/full/2165.jpg');
@@ -16,7 +16,7 @@
             --hypr-ease: cubic-bezier(0.22, 1, 0.36, 1);
             --bar-spacing: 0px;
         }
-
+        
         body,
         html {
             margin: 0;
@@ -28,13 +28,13 @@
             overflow: hidden;
             user-select: none;
         }
-
+        
         #viewport {
             position: relative;
             width: 100%;
             height: 100%;
         }
-
+        
         .workspace-layer {
             position: absolute;
             width: 100%;
@@ -42,12 +42,12 @@
             transition: transform 0.6s cubic-bezier(0.22, 1, 0.36, 1);
             pointer-events: none;
         }
-
+        
         .workspace-layer.active {
             transform: translateX(0);
             pointer-events: auto;
         }
-
+        
         .tile {
             position: absolute;
             background: var(--bg-dark);
@@ -60,53 +60,53 @@
             transition: all var(--speed) var(--hypr-ease);
             z-index: 1;
         }
-
+        
         .tile:hover {
             border-color: var(--active);
             box-shadow: 0 0 20px rgba(255, 255, 255, 0.1);
             z-index: 5;
         }
-
+        
         .tile.no-interact iframe {
             pointer-events: none !important;
         }
-
+        
         .tile.just-spawned {
             animation: hyprPopIn var(--speed) var(--hypr-ease) forwards;
         }
-
+        
         @keyframes hyprPopIn {
             from {
                 opacity: 0;
                 transform: scale(0.5) translateY(15px);
                 filter: blur(5px);
             }
-
+            
             to {
                 opacity: 1;
                 transform: scale(1) translateY(0);
                 filter: blur(0px);
             }
         }
-
+        
         .tile.closing {
             animation: hyprPopOut var(--speed) var(--hypr-ease) forwards !important;
             pointer-events: none;
             z-index: 100;
         }
-
+        
         @keyframes hyprPopOut {
             from {
                 opacity: 1;
                 transform: scale(1);
             }
-
+            
             to {
                 opacity: 0;
                 transform: scale(0.92) translateY(10px);
             }
         }
-
+        
         .tile.dragging {
             transition: none !important;
             z-index: 1000 !important;
@@ -114,7 +114,7 @@
             pointer-events: none;
             border-color: #fff;
         }
-
+        
         .bar {
             background: #00000038;
             padding: 6px 12px;
@@ -124,7 +124,7 @@
             letter-spacing: 1px;
             border-bottom: 1px solid #1a1a1a;
         }
-
+        
         .tab-bar {
             display: flex;
             background: #0a0a0a;
@@ -134,11 +134,11 @@
             align-items: center;
             overflow-x: auto;
         }
-
+        
         .tab-bar::-webkit-scrollbar {
             display: none;
         }
-
+        
         .tab {
             display: flex;
             align-items: center;
@@ -153,14 +153,14 @@
             transition: 0.2s;
             white-space: nowrap;
         }
-
+        
         .tab.active {
             background: #fff;
             color: #000;
             border-color: #fff;
             font-weight: bold;
         }
-
+        
         .tab-close {
             display: flex;
             align-items: center;
@@ -172,13 +172,13 @@
             transition: 0.2s;
             opacity: 0.6;
         }
-
+        
         .tab-close:hover {
             background: rgba(255, 0, 0, 0.8);
             color: white !important;
             opacity: 1;
         }
-
+        
         .tab-add {
             min-width: 20px;
             height: 20px;
@@ -192,7 +192,7 @@
             font-size: 14px;
             border: 1px solid #222;
         }
-
+        
         .content {
             flex: 1;
             position: relative;
@@ -200,13 +200,13 @@
             flex-direction: column;
             min-height: 0;
         }
-
+        
         .iframe-container {
             flex: 1;
             position: relative;
             background: #fff;
         }
-
+        
         iframe {
             position: absolute;
             top: 0;
@@ -216,11 +216,11 @@
             border: none;
             display: none;
         }
-
+        
         iframe.active {
             display: block;
         }
-
+        
         .term-body {
             flex: 1;
             padding: 12px;
@@ -231,19 +231,19 @@
             white-space: pre-wrap;
             user-select: text;
         }
-
+        
         .term-line {
             display: flex;
             align-items: flex-start;
             margin-top: 4px;
         }
-
+        
         .term-prompt {
             color: #50fa7b;
             font-weight: bold;
             padding-right: 8px;
         }
-
+        
         .term-ghost-input {
             background: transparent;
             border: none;
@@ -255,11 +255,11 @@
             padding: 0;
             margin: 0;
         }
-
+        
         .term-history {
             line-height: 1.4;
         }
-
+        
         #ws-bar {
             position: fixed;
             bottom: 10px;
@@ -278,7 +278,7 @@
             /* Added Entrance Animation */
             animation: barSlideUp 0.8s var(--hypr-ease) forwards;
         }
-
+        
         @keyframes barSlideUp {
             from {
                 transform: translateX(-50%) translateY(100px);
@@ -289,13 +289,13 @@
                 opacity: 1;
             }
         }
-
+        
         .ws-dots-container {
             display: flex;
             gap: 8px;
             align-items: center;
         }
-
+        
         .ws-dot {
             width: 6px;
             height: 6px;
@@ -303,13 +303,13 @@
             background: #333;
             transition: 0.4s var(--hypr-ease);
         }
-
+        
         .ws-dot.active {
             background: #fff;
             width: 22px;
             border-radius: 10px;
         }
-
+        
         #clock {
             color: #fff;
             font-size: 12px;
@@ -323,19 +323,19 @@
 </head>
 
 <body>
-
+    
     <div id="viewport"></div>
     <div id="ws-bar">
         <div class="ws-dots-container" id="ws-dots"></div>
         <div id="clock">00:00:00 PM</div>
     </div>
-
+    
     <script>
         const MAX_WS = 10;
         const GOOGLE_URL = "https://onixsb1.share.zrok.io";
         let currentWS = 1, workspaces = {}, hoveredId = null, mouseX = 0, mouseY = 0, draggedNode = null, offset = { x: 0, y: 0 };
         let isCtrlPressed = false, isDragging = false;
-
+        
         function updateClock() {
             const now = new Date();
             let hours = now.getHours();
@@ -348,17 +348,18 @@
         }
         setInterval(updateClock, 1000);
         updateClock();
-
+        
         window.addEventListener('keydown', e => {
             if (e.key === 'Control') {
                 isCtrlPressed = true;
                 document.querySelectorAll('.tile').forEach(t => t.classList.add('no-interact'));
                 document.body.style.userSelect = 'none';
-                // Clear text selection
+                // Clear any existing selection immediately
                 window.getSelection().removeAllRanges();
             }
         });
-
+        
+        
         window.addEventListener('keyup', e => {
             if (e.key === 'Control') {
                 isCtrlPressed = false;
@@ -366,7 +367,7 @@
                 document.body.style.userSelect = 'auto';
             }
         });
-
+        
         for (let i = 1; i <= MAX_WS; i++) {
             const layer = document.createElement('div');
             layer.className = `workspace-layer ws-${i} ${i === 1 ? 'active' : ''}`;
@@ -377,15 +378,15 @@
             dot.className = `ws-dot ws-dot-${i} ${i === 1 ? 'active' : ''}`;
             document.getElementById('ws-dots').appendChild(dot);
         }
-
+        
         window.addEventListener('mousemove', e => { mouseX = e.clientX; mouseY = e.clientY; });
-
+        
         function spawn(type, custom = undefined, existingNode = null) {
             if (!type) return;
             const ws = workspaces[currentWS];
             const id = existingNode ? existingNode.id : 'win-' + Math.random().toString(36).substr(2, 5);
             const node = existingNode || { id, type: 'leaf', app: type, el: createEl(id, type, custom) };
-
+            
             if (!ws.tree) {
                 ws.tree = node;
             } else {
@@ -400,7 +401,7 @@
             }
             tileAll();
         }
-
+        
         function getHardwareInfo() {
             const info = {
                 cpuCores: navigator.hardwareConcurrency || "Unknown",
@@ -418,42 +419,68 @@
             } catch (e) { info.gpu = "Access Denied"; }
             return info;
         }
-
+        
         function createEl(id, type, custom) {
             const el = document.createElement('div');
             el.id = id; el.className = 'tile just-spawned no-interact';
             el.onmouseleave = () => { if (!isCtrlPressed && !isDragging) el.classList.add('no-interact'); };
             el.onmouseenter = () => { hoveredId = id; if (!isCtrlPressed && !isDragging) el.classList.remove('no-interact'); };
-
+            
             const startDrag = (e) => {
+                // Force selection clear again just in case
+                window.getSelection().removeAllRanges();
+                
                 const ws = workspaces[currentWS];
                 const rect = el.getBoundingClientRect();
-                offset.x = e.clientX - rect.left; offset.y = e.clientY - rect.top;
+                offset.x = e.clientX - rect.left; 
+                offset.y = e.clientY - rect.top;
+                
                 draggedNode = findNode(ws.tree, id);
                 if (!draggedNode) return;
+                
                 isDragging = true;
+                
+                // Safety net: Disable selection globally during the drag
+                document.onselectstart = () => false; 
+                
                 document.querySelectorAll('.tile').forEach(t => t.classList.add('no-interact'));
                 if (ws.tree.id === id) ws.tree = null; else ws.tree = removeNodeRecursive(ws.tree, id);
                 el.classList.add('dragging');
                 tileAll();
-                const move = (me) => { el.style.left = (me.clientX - offset.x) + 'px'; el.style.top = (me.clientY - offset.y) + 'px'; };
+                
+                const move = (me) => { 
+                    el.style.left = (me.clientX - offset.x) + 'px'; 
+                    el.style.top = (me.clientY - offset.y) + 'px'; 
+                };
+                
                 const up = () => {
-                    isDragging = false; el.classList.remove('dragging');
+                    isDragging = false; 
+                    el.classList.remove('dragging');
+                    
+                    // Restore selection ability
+                    document.onselectstart = null; 
+                    
                     if (!isCtrlPressed) document.querySelectorAll('.tile').forEach(t => t.classList.remove('no-interact'));
                     spawn(type, undefined, draggedNode);
                     draggedNode = null;
-                    window.removeEventListener('mousemove', move); window.removeEventListener('mouseup', up);
+                    window.removeEventListener('mousemove', move); 
+                    window.removeEventListener('mouseup', up);
                 };
-                window.addEventListener('mousemove', move); window.addEventListener('mouseup', up);
+                window.addEventListener('mousemove', move); 
+                window.addEventListener('mouseup', up);
             };
-
-            el.onmousedown = (e) => { if (isCtrlPressed) startDrag(e); };
+            el.onmousedown = (e) => { 
+                if (isCtrlPressed) {
+                    e.preventDefault(); // This is the magic line that stops the selection from even starting
+                    startDrag(e); 
+                }
+            };
             const bar = document.createElement('div');
             bar.className = 'bar'; bar.innerHTML = `<span>${type.toUpperCase()}</span>`;
             bar.onmousedown = (e) => { e.stopPropagation(); startDrag(e); };
             const content = document.createElement('div');
             content.className = 'content';
-
+            
             if (type === 'browser') {
                 const tabBar = document.createElement('div');
                 tabBar.className = 'tab-bar';
@@ -490,13 +517,13 @@
                 addTab();
             } else if (type === "terminal") {
                 const hw = getHardwareInfo();
-                let welcome = `OnixOS v1.3\nCPU: ${hw.cpuCores} cores\nRAM: ~${hw.ram}\nGPU: ${hw.gpu}`;
+                let welcome = `OnixOS v1.3.1\nCPU: ${hw.cpuCores} cores\nRAM: ~${hw.ram}\nGPU: ${hw.gpu}`;
                 content.innerHTML = `<div class="term-body"><div class="term-history">${welcome}\n\nType 'help' for info.\n</div><div class="term-line"><span class="term-prompt">>$</span><input class="term-ghost-input" spellcheck="false" autocomplete="off"></div></div>`;
                 const body = content.querySelector('.term-body'), history = content.querySelector('.term-history'), input = content.querySelector('.term-ghost-input');
                 content.onclick = () => input.focus();
-
+                
                 setTimeout(() => input.focus(), 50);
-
+                
                 input.onkeydown = (e) => {
                     if (e.key === 'Enter') {
                         const cmd = input.value; let response = "";
@@ -504,7 +531,7 @@
                             try {
                                 if (cmd === 'help') response = "Available: spawn(type), kill(), clear, neofetch";
                                 else if (cmd === 'clear') history.innerText = "";
-                                else if (cmd === 'neofetch') response = `OnixOS v1.3\nCPU: ${hw.cpuCores} cores\nRAM: ${hw.ram}\nGPU: ${hw.gpu}`;
+                                else if (cmd === 'neofetch') response = `OnixOS v1.3.1\nCPU: ${hw.cpuCores} cores\nRAM: ${hw.ram}\nGPU: ${hw.gpu}`;
                                 else { let result = eval(cmd); response = result !== undefined ? String(result) : ""; }
                             } catch (err) { response = "Error: " + err.message; }
                             if (cmd !== 'clear') history.innerText += `>$ ${cmd}${response ? '\n' + response : ''}\n`;
@@ -515,7 +542,7 @@
             } else if (type === "introduction") {
                 content.style.color = "white"
                 content.innerHTML = `<div style="text-align: center">
-               <h1>OnixOS v1.3</h1>
+               <h1>OnixOS v1.3.1</h1>
                <h4>A tiling window manager right in your browser!</h4>
                <hr />
                <a>Ctrl+Q - JavaScript Terminal</a><br />
@@ -525,97 +552,97 @@
                <a>Ctrl+Holding window / Holding top bar - Move</a><br />
                <a>Ctrl+0 to Ctrl+10 - Switch workspaces</a><br />
             </div>`
-            } else {
-                if (custom !== undefined) {
-                    content.style.backgroundColor = "white";
-                    content.innerHTML = custom;
                 } else {
-                    content.style.display = "flex"; content.style.justifyContent = "center";
-                    content.style.alignItems = "center";
-                    content.style.color = "white"; content.innerHTML = `<a>App failed to load</a><br /><a>Please add a second option to spawn(\"${type}\")</a><br /><a>Example: spawn(\"${type}\", \"Hello world!\")</a>`;
+                    if (custom !== undefined) {
+                        content.style.backgroundColor = "white";
+                        content.innerHTML = custom;
+                    } else {
+                        content.style.display = "flex"; content.style.justifyContent = "center";
+                        content.style.alignItems = "center";
+                        content.style.color = "white"; content.innerHTML = `<a>App failed to load</a><br /><a>Please add a second option to spawn(\"${type}\")</a><br /><a>Example: spawn(\"${type}\", \"Hello world!\")</a>`;
+                    }
+                }
+                el.appendChild(bar); el.appendChild(content);
+                workspaces[currentWS].el.appendChild(el);
+                return el;
+            }
+            
+            function kill() {
+                const ws = workspaces[currentWS];
+                if (!hoveredId || !ws.tree) return;
+                const target = findNode(ws.tree, hoveredId);
+                if (!target || target.el.classList.contains('closing')) return;
+                const elToKill = target.el;
+                elToKill.classList.add('closing');
+                if (ws.tree.id === hoveredId) ws.tree = null; else ws.tree = removeNodeRecursive(ws.tree, hoveredId);
+                hoveredId = null; tileAll();
+                elToKill.onanimationend = (e) => { if (e.animationName === 'hyprPopOut') elToKill.remove(); };
+            }
+            
+            function tileAll() {
+                const ws = workspaces[currentWS];
+                if (ws.tree) updateCoords(ws.tree, 12, 12, window.innerWidth - 24, window.innerHeight - 60);
+            }
+            
+            function updateCoords(node, x, y, w, h) {
+                if (node.type === 'leaf') {
+                    node.el.style.left = `${x}px`; node.el.style.top = `${y}px`;
+                    node.el.style.width = `${w}px`; node.el.style.height = `${h}px`;
+                } else if (node.children) {
+                    const g = 12;
+                    if (node.split === 'h') {
+                        const hw = (w - g) / 2;
+                        updateCoords(node.children[0], x, y, hw, h);
+                        updateCoords(node.children[1], x + hw + g, y, hw, h);
+                    } else {
+                        const hh = (h - g) / 2;
+                        updateCoords(node.children[0], x, y, w, hh);
+                        updateCoords(node.children[1], x, y + hh + g, w, hh);
+                    }
                 }
             }
-            el.appendChild(bar); el.appendChild(content);
-            workspaces[currentWS].el.appendChild(el);
-            return el;
-        }
-
-        function kill() {
-            const ws = workspaces[currentWS];
-            if (!hoveredId || !ws.tree) return;
-            const target = findNode(ws.tree, hoveredId);
-            if (!target || target.el.classList.contains('closing')) return;
-            const elToKill = target.el;
-            elToKill.classList.add('closing');
-            if (ws.tree.id === hoveredId) ws.tree = null; else ws.tree = removeNodeRecursive(ws.tree, hoveredId);
-            hoveredId = null; tileAll();
-            elToKill.onanimationend = (e) => { if (e.animationName === 'hyprPopOut') elToKill.remove(); };
-        }
-
-        function tileAll() {
-            const ws = workspaces[currentWS];
-            if (ws.tree) updateCoords(ws.tree, 12, 12, window.innerWidth - 24, window.innerHeight - 60);
-        }
-
-        function updateCoords(node, x, y, w, h) {
-            if (node.type === 'leaf') {
-                node.el.style.left = `${x}px`; node.el.style.top = `${y}px`;
-                node.el.style.width = `${w}px`; node.el.style.height = `${h}px`;
-            } else if (node.children) {
-                const g = 12;
-                if (node.split === 'h') {
-                    const hw = (w - g) / 2;
-                    updateCoords(node.children[0], x, y, hw, h);
-                    updateCoords(node.children[1], x + hw + g, y, hw, h);
-                } else {
-                    const hh = (h - g) / 2;
-                    updateCoords(node.children[0], x, y, w, hh);
-                    updateCoords(node.children[1], x, y + hh + g, w, hh);
-                }
+            
+            function removeNodeRecursive(node, id) {
+                if (!node || node.type === 'leaf') return node;
+                const [l, r] = node.children;
+                if (l.type === 'leaf' && l.id === id) return r;
+                if (r.type === 'leaf' && r.id === id) return l;
+                node.children[0] = removeNodeRecursive(l, id);
+                node.children[1] = removeNodeRecursive(r, id);
+                return node;
             }
-        }
-
-        function removeNodeRecursive(node, id) {
-            if (!node || node.type === 'leaf') return node;
-            const [l, r] = node.children;
-            if (l.type === 'leaf' && l.id === id) return r;
-            if (r.type === 'leaf' && r.id === id) return l;
-            node.children[0] = removeNodeRecursive(l, id);
-            node.children[1] = removeNodeRecursive(r, id);
-            return node;
-        }
-
-        function findNode(node, id) {
-            if (!node || !id) return null;
-            if (node.id === id) return node;
-            if (node.type === 'branch') return findNode(node.children[0], id) || findNode(node.children[1], id);
-            return null;
-        }
-
-        function findFirstLeaf(node) {
-            if (!node) return null;
-            return node.type === 'leaf' ? node : findFirstLeaf(node.children[0]);
-        }
-
-        window.addEventListener('resize', tileAll);
-        window.addEventListener('keydown', (e) => {
-            if (e.ctrlKey && e.key >= '0' && e.key <= '9') {
-                e.preventDefault();
-                const t = e.key === '0' ? 10 : parseInt(e.key);
-                for (let i = 1; i <= MAX_WS; i++) {
-                    workspaces[i].el.style.transform = `translateX(${(i - t) * 100}%)`;
-                    workspaces[i].el.classList.toggle('active', i === t);
-                    document.querySelector(`.ws-dot-${i}`).classList.toggle('active', i === t);
-                }
-                currentWS = t; hoveredId = null;
+            
+            function findNode(node, id) {
+                if (!node || !id) return null;
+                if (node.id === id) return node;
+                if (node.type === 'branch') return findNode(node.children[0], id) || findNode(node.children[1], id);
+                return null;
             }
-            if (e.ctrlKey && e.key === 'q') { e.preventDefault(); spawn('terminal'); }
-            if (e.ctrlKey && e.key === 'b') { e.preventDefault(); spawn('browser'); }
-            if (e.ctrlKey && e.key === 'c') { e.preventDefault(); kill(); }
-            if (e.ctrlKey && e.key === 'r') { e.preventDefault(); spawn(prompt("Enter app: ")); }
-        });
-        spawn("introduction")
-    </script>
-</body>
-
-</html>
+            
+            function findFirstLeaf(node) {
+                if (!node) return null;
+                return node.type === 'leaf' ? node : findFirstLeaf(node.children[0]);
+            }
+            
+            window.addEventListener('resize', tileAll);
+            window.addEventListener('keydown', (e) => {
+                if (e.ctrlKey && e.key >= '0' && e.key <= '9') {
+                    e.preventDefault();
+                    const t = e.key === '0' ? 10 : parseInt(e.key);
+                    for (let i = 1; i <= MAX_WS; i++) {
+                        workspaces[i].el.style.transform = `translateX(${(i - t) * 100}%)`;
+                        workspaces[i].el.classList.toggle('active', i === t);
+                        document.querySelector(`.ws-dot-${i}`).classList.toggle('active', i === t);
+                    }
+                    currentWS = t; hoveredId = null;
+                }
+                if (e.ctrlKey && e.key === 'q') { e.preventDefault(); spawn('terminal'); }
+                if (e.ctrlKey && e.key === 'b') { e.preventDefault(); spawn('browser'); }
+                if (e.ctrlKey && e.key === 'c') { e.preventDefault(); kill(); }
+                if (e.ctrlKey && e.key === 'r') { e.preventDefault(); spawn(prompt("Enter app: ")); }
+            });
+            spawn("introduction")
+        </script>
+    </body>
+    
+    </html>
