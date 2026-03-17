@@ -3,7 +3,7 @@
 
 <head>
     <meta charset="UTF-8">
-    <title>OnixOS v1.3.2 TWM</title>
+    <title>OnixOS v1.4 TWM</title>
     <style>
         :root {
             --bg-img: url('https://wallpaperaccess.com/full/2165.jpg');
@@ -15,6 +15,34 @@
             --speed: 0.5s;
             --hypr-ease: cubic-bezier(0.22, 1, 0.36, 1);
             --bar-spacing: 0px;
+        }
+        
+        /* Close button for the main window bar */
+        .window-close {
+            width: 12px;
+            height: 12px;
+            background: #ff5f56; /* Classic Mac/Browser red */
+            border-radius: 3px;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 8px;
+            color: transparent; /* Hide X by default */
+            transition: 0.2s;
+            border: 1px solid rgba(0,0,0,0.1);
+        }
+        
+        .window-close:hover {
+            background: #ff3b30;
+            color: rgba(0,0,0,0.6); /* Show X on hover */
+        }
+        
+        /* Adjust the bar to layout the title and button */
+        .bar {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
         }
         
         body,
@@ -482,77 +510,98 @@
                 }
             };
             const bar = document.createElement('div');
-            bar.className = 'bar'; bar.innerHTML = `<span>${type.toUpperCase()}</span>`;
-            bar.onmousedown = (e) => { e.stopPropagation(); startDrag(e); };
-            const content = document.createElement('div');
-            content.className = 'content';
+            bar.className = 'bar';
             
-            if (type === 'browser') {
-                const tabBar = document.createElement('div');
-                tabBar.className = 'tab-bar';
-                const tabsContainer = document.createElement('div');
-                tabsContainer.style.display = 'flex'; tabsContainer.style.gap = '5px';
-                const addBtn = document.createElement('div');
-                addBtn.className = 'tab-add'; addBtn.innerText = '+';
-                const iframeContainer = document.createElement('div');
-                iframeContainer.className = 'iframe-container';
-                const addTab = () => {
-                    const tabId = 'tab-' + Math.random().toString(36).substr(2, 5);
-                    const tab = document.createElement('div');
-                    tab.className = 'tab'; tab.innerHTML = `<span>TAB</span><div class="tab-close">✕</div>`;
-                    const iframe = document.createElement('iframe');
-                    iframe.id = tabId; iframe.src = GOOGLE_URL;
-                    iframeContainer.appendChild(iframe);
-                    tab.onclick = (e) => {
-                        if (e.target.className === 'tab-close') {
-                            iframe.remove(); tab.remove();
-                            const remaining = tabsContainer.querySelectorAll('.tab');
-                            if (remaining.length === 0) { hoveredId = id; kill(); }
-                            else remaining[0].click();
-                            return;
-                        }
-                        tabsContainer.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
-                        iframeContainer.querySelectorAll('iframe').forEach(f => f.classList.remove('active'));
-                        tab.classList.add('active'); iframe.classList.add('active');
-                    };
-                    tabsContainer.appendChild(tab); tab.click();
-                };
-                addBtn.onclick = () => addTab();
-                tabBar.appendChild(tabsContainer); tabBar.appendChild(addBtn);
-                content.appendChild(tabBar); content.appendChild(iframeContainer);
-                addTab();
-            } else if (type === "terminal") {
-                const hw = getHardwareInfo();
-                let welcome = `OnixOS v1.3.2\nCPU: ${hw.cpuCores} cores\nRAM: ~${hw.ram}\nGPU: ${hw.gpu}`;
-                content.innerHTML = `<div class="term-body"><div class="term-history">${welcome}\n\nType 'help' for info.\n</div><div class="term-line"><span class="term-prompt">>$</span><input class="term-ghost-input" spellcheck="false" autocomplete="off"></div></div>`;
-                const body = content.querySelector('.term-body'), history = content.querySelector('.term-history'), input = content.querySelector('.term-ghost-input');
-                content.onclick = () => input.focus();
-                
-                setTimeout(() => input.focus(), 50);
-                
-                input.onkeydown = (e) => {
-                    if (e.ctrlKey && e.key === 'a') {
-                        e.preventDefault(); // Stop the browser from selecting the whole page
-                        input.select();    // Select only the text inside this specific input
+            // NEW: Add Title and Close Button
+            bar.innerHTML = `
+        <span>${type.toUpperCase()}</span>
+        <div class="window-close" title="Close">✕</div>
+    `;
+            
+            // NEW: Close button event
+            const closeBtn = bar.querySelector('.window-close');
+            closeBtn.onmousedown = (e) => {
+                e.stopPropagation(); // Prevent drag from starting
+                hoveredId = id;      // Ensure we target this specific window
+                kill();
+            };
+            
+            bar.onmousedown = (e) => { 
+                if (e.target !== closeBtn) { // Don't drag if clicking close button
+                e.stopPropagation(); 
+                startDrag(e); 
+            }
+        };
+        
+        const content = document.createElement('div');
+        content.className = 'content';
+        
+        if (type === 'browser') {
+            const tabBar = document.createElement('div');
+            tabBar.className = 'tab-bar';
+            const tabsContainer = document.createElement('div');
+            tabsContainer.style.display = 'flex'; tabsContainer.style.gap = '5px';
+            const addBtn = document.createElement('div');
+            addBtn.className = 'tab-add'; addBtn.innerText = '+';
+            const iframeContainer = document.createElement('div');
+            iframeContainer.className = 'iframe-container';
+            const addTab = () => {
+                const tabId = 'tab-' + Math.random().toString(36).substr(2, 5);
+                const tab = document.createElement('div');
+                tab.className = 'tab'; tab.innerHTML = `<span>TAB</span><div class="tab-close">✕</div>`;
+                const iframe = document.createElement('iframe');
+                iframe.id = tabId; iframe.src = GOOGLE_URL;
+                iframeContainer.appendChild(iframe);
+                tab.onclick = (e) => {
+                    if (e.target.className === 'tab-close') {
+                        iframe.remove(); tab.remove();
+                        const remaining = tabsContainer.querySelectorAll('.tab');
+                        if (remaining.length === 0) { hoveredId = id; kill(); }
+                        else remaining[0].click();
+                        return;
                     }
-                    if (e.key === 'Enter') {
-                        const cmd = input.value; let response = "";
-                        if (cmd.trim() !== "") {
-                            try {
-                                if (cmd === 'help') response = "Available: spawn(type), kill(), clear, neofetch";
-                                else if (cmd === 'clear') history.innerText = "";
-                                else if (cmd === 'neofetch') response = `OnixOS v1.3.2\nCPU: ${hw.cpuCores} cores\nRAM: ${hw.ram}\nGPU: ${hw.gpu}`;
-                                else { let result = eval(cmd); response = result !== undefined ? String(result) : ""; }
-                            } catch (err) { response = "Error: " + err.message; }
-                            if (cmd !== 'clear') history.innerText += `>$ ${cmd}${response ? '\n' + response : ''}\n`;
-                        }
-                        input.value = ''; body.scrollTop = body.scrollHeight;
-                    }
+                    tabsContainer.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+                    iframeContainer.querySelectorAll('iframe').forEach(f => f.classList.remove('active'));
+                    tab.classList.add('active'); iframe.classList.add('active');
                 };
-            } else if (type === "introduction") {
-                content.style.color = "white"
-                content.innerHTML = `<div style="text-align: center">
-               <h1>OnixOS v1.3.2</h1>
+                tabsContainer.appendChild(tab); tab.click();
+            };
+            addBtn.onclick = () => addTab();
+            tabBar.appendChild(tabsContainer); tabBar.appendChild(addBtn);
+            content.appendChild(tabBar); content.appendChild(iframeContainer);
+            addTab();
+        } else if (type === "terminal") {
+            const hw = getHardwareInfo();
+            let welcome = `OnixOS v1.4\nCPU: ${hw.cpuCores} cores\nRAM: ~${hw.ram}\nGPU: ${hw.gpu}`;
+            content.innerHTML = `<div class="term-body"><div class="term-history">${welcome}\n\nType 'help' for info.\n</div><div class="term-line"><span class="term-prompt">>$</span><input class="term-ghost-input" spellcheck="false" autocomplete="off"></div></div>`;
+            const body = content.querySelector('.term-body'), history = content.querySelector('.term-history'), input = content.querySelector('.term-ghost-input');
+            content.onclick = () => input.focus();
+            
+            setTimeout(() => input.focus(), 50);
+            
+            input.onkeydown = (e) => {
+                if (e.ctrlKey && e.key === 'a') {
+                    e.preventDefault(); // Stop the browser from selecting the whole page
+                    input.select();    // Select only the text inside this specific input
+                }
+                if (e.key === 'Enter') {
+                    const cmd = input.value; let response = "";
+                    if (cmd.trim() !== "") {
+                        try {
+                            if (cmd === 'help') response = "Available: spawn(type), kill(), clear, neofetch";
+                            else if (cmd === 'clear') history.innerText = "";
+                            else if (cmd === 'neofetch') response = `OnixOS v1.4\nCPU: ${hw.cpuCores} cores\nRAM: ${hw.ram}\nGPU: ${hw.gpu}`;
+                            else { let result = eval(cmd); response = result !== undefined ? String(result) : ""; }
+                        } catch (err) { response = "Error: " + err.message; }
+                        if (cmd !== 'clear') history.innerText += `>$ ${cmd}${response ? '\n' + response : ''}\n`;
+                    }
+                    input.value = ''; body.scrollTop = body.scrollHeight;
+                }
+            };
+        } else if (type === "introduction") {
+            content.style.color = "white"
+            content.innerHTML = `<div style="text-align: center">
+               <h1>OnixOS v1.4</h1>
                <h4>A tiling window manager right in your browser!</h4>
                <hr />
                <a>Ctrl+Q - JavaScript Terminal</a><br />
@@ -562,105 +611,106 @@
                <a>Ctrl+Holding window / Holding top bar - Move</a><br />
                <a>Ctrl+0 to Ctrl+10 - Switch workspaces</a><br />
             </div>`
-                } else if (type === "sVNC") {
-                    content.innerHTML = `
+            } else if (type === "sVNC") {
+                content.innerHTML = `
                     <iframe src="https://tinyurl.com/onixsbrpivnc" class="active" />
                     `
-                } else if (type === "sZROK") {
-                    content.innerHTML = `
+            } else if (type === "sZROK") {
+                content.innerHTML = `
                     <iframe src="https://api-v1.zrok.io" class="active" />
                     `
+            } else {
+                if (custom !== undefined) {
+                    content.style.backgroundColor = "white";
+                    content.innerHTML = custom;
                 } else {
-                    if (custom !== undefined) {
-                        content.style.backgroundColor = "white";
-                        content.innerHTML = custom;
-                    } else {
-                        content.style.display = "flex"; content.style.justifyContent = "center";
-                        content.style.alignItems = "center";
-                        content.style.color = "white"; content.innerHTML = `<a>App failed to load</a><br /><a>Please add a second option to spawn(\"${type}\")</a><br /><a>Example: spawn(\"${type}\", \"Hello world!\")</a>`;
-                    }
-                }
-                el.appendChild(bar); el.appendChild(content);
-                workspaces[currentWS].el.appendChild(el);
-                return el;
-            }
-            
-            function kill() {
-                const ws = workspaces[currentWS];
-                if (!hoveredId || !ws.tree) return;
-                const target = findNode(ws.tree, hoveredId);
-                if (!target || target.el.classList.contains('closing')) return;
-                const elToKill = target.el;
-                elToKill.classList.add('closing');
-                if (ws.tree.id === hoveredId) ws.tree = null; else ws.tree = removeNodeRecursive(ws.tree, hoveredId);
-                hoveredId = null; tileAll();
-                elToKill.onanimationend = (e) => { if (e.animationName === 'hyprPopOut') elToKill.remove(); };
-            }
-            
-            function tileAll() {
-                const ws = workspaces[currentWS];
-                if (ws.tree) updateCoords(ws.tree, 12, 12, window.innerWidth - 24, window.innerHeight - 60);
-            }
-            
-            function updateCoords(node, x, y, w, h) {
-                if (node.type === 'leaf') {
-                    node.el.style.left = `${x}px`; node.el.style.top = `${y}px`;
-                    node.el.style.width = `${w}px`; node.el.style.height = `${h}px`;
-                } else if (node.children) {
-                    const g = 12;
-                    if (node.split === 'h') {
-                        const hw = (w - g) / 2;
-                        updateCoords(node.children[0], x, y, hw, h);
-                        updateCoords(node.children[1], x + hw + g, y, hw, h);
-                    } else {
-                        const hh = (h - g) / 2;
-                        updateCoords(node.children[0], x, y, w, hh);
-                        updateCoords(node.children[1], x, y + hh + g, w, hh);
-                    }
+                    content.style.display = "flex"; content.style.justifyContent = "center";
+                    content.style.alignItems = "center";
+                    content.style.color = "white"; content.innerHTML = `<a>App failed to load</a><br /><a>Please add a second option to spawn(\"${type}\")</a><br /><a>Example: spawn(\"${type}\", \"Hello world!\")</a>`;
                 }
             }
-            
-            function removeNodeRecursive(node, id) {
-                if (!node || node.type === 'leaf') return node;
-                const [l, r] = node.children;
-                if (l.type === 'leaf' && l.id === id) return r;
-                if (r.type === 'leaf' && r.id === id) return l;
-                node.children[0] = removeNodeRecursive(l, id);
-                node.children[1] = removeNodeRecursive(r, id);
-                return node;
-            }
-            
-            function findNode(node, id) {
-                if (!node || !id) return null;
-                if (node.id === id) return node;
-                if (node.type === 'branch') return findNode(node.children[0], id) || findNode(node.children[1], id);
-                return null;
-            }
-            
-            function findFirstLeaf(node) {
-                if (!node) return null;
-                return node.type === 'leaf' ? node : findFirstLeaf(node.children[0]);
-            }
-            
-            window.addEventListener('resize', tileAll);
-            window.addEventListener('keydown', (e) => {
-                if (e.ctrlKey && e.key >= '0' && e.key <= '9') {
-                    e.preventDefault();
-                    const t = e.key === '0' ? 10 : parseInt(e.key);
-                    for (let i = 1; i <= MAX_WS; i++) {
-                        workspaces[i].el.style.transform = `translateX(${(i - t) * 100}%)`;
-                        workspaces[i].el.classList.toggle('active', i === t);
-                        document.querySelector(`.ws-dot-${i}`).classList.toggle('active', i === t);
-                    }
-                    currentWS = t; hoveredId = null;
+            el.appendChild(bar); 
+            el.appendChild(content);
+            workspaces[currentWS].el.appendChild(el);
+            return el;
+        }
+        
+        function kill() {
+            const ws = workspaces[currentWS];
+            if (!hoveredId || !ws.tree) return;
+            const target = findNode(ws.tree, hoveredId);
+            if (!target || target.el.classList.contains('closing')) return;
+            const elToKill = target.el;
+            elToKill.classList.add('closing');
+            if (ws.tree.id === hoveredId) ws.tree = null; else ws.tree = removeNodeRecursive(ws.tree, hoveredId);
+            hoveredId = null; tileAll();
+            elToKill.onanimationend = (e) => { if (e.animationName === 'hyprPopOut') elToKill.remove(); };
+        }
+        
+        function tileAll() {
+            const ws = workspaces[currentWS];
+            if (ws.tree) updateCoords(ws.tree, 12, 12, window.innerWidth - 24, window.innerHeight - 60);
+        }
+        
+        function updateCoords(node, x, y, w, h) {
+            if (node.type === 'leaf') {
+                node.el.style.left = `${x}px`; node.el.style.top = `${y}px`;
+                node.el.style.width = `${w}px`; node.el.style.height = `${h}px`;
+            } else if (node.children) {
+                const g = 12;
+                if (node.split === 'h') {
+                    const hw = (w - g) / 2;
+                    updateCoords(node.children[0], x, y, hw, h);
+                    updateCoords(node.children[1], x + hw + g, y, hw, h);
+                } else {
+                    const hh = (h - g) / 2;
+                    updateCoords(node.children[0], x, y, w, hh);
+                    updateCoords(node.children[1], x, y + hh + g, w, hh);
                 }
-                if (e.ctrlKey && e.key === 'q') { e.preventDefault(); spawn('terminal'); }
-                if (e.ctrlKey && e.key === 'b') { e.preventDefault(); spawn('browser'); }
-                if (e.ctrlKey && e.key === 'c') { e.preventDefault(); kill(); }
-                if (e.ctrlKey && e.key === 'r') { e.preventDefault(); spawn(prompt("Enter app: ")); }
-            });
-            spawn("introduction")
-        </script>
-    </body>
-    
-    </html>
+            }
+        }
+        
+        function removeNodeRecursive(node, id) {
+            if (!node || node.type === 'leaf') return node;
+            const [l, r] = node.children;
+            if (l.type === 'leaf' && l.id === id) return r;
+            if (r.type === 'leaf' && r.id === id) return l;
+            node.children[0] = removeNodeRecursive(l, id);
+            node.children[1] = removeNodeRecursive(r, id);
+            return node;
+        }
+        
+        function findNode(node, id) {
+            if (!node || !id) return null;
+            if (node.id === id) return node;
+            if (node.type === 'branch') return findNode(node.children[0], id) || findNode(node.children[1], id);
+            return null;
+        }
+        
+        function findFirstLeaf(node) {
+            if (!node) return null;
+            return node.type === 'leaf' ? node : findFirstLeaf(node.children[0]);
+        }
+        
+        window.addEventListener('resize', tileAll);
+        window.addEventListener('keydown', (e) => {
+            if (e.ctrlKey && e.key >= '0' && e.key <= '9') {
+                e.preventDefault();
+                const t = e.key === '0' ? 10 : parseInt(e.key);
+                for (let i = 1; i <= MAX_WS; i++) {
+                    workspaces[i].el.style.transform = `translateX(${(i - t) * 100}%)`;
+                    workspaces[i].el.classList.toggle('active', i === t);
+                    document.querySelector(`.ws-dot-${i}`).classList.toggle('active', i === t);
+                }
+                currentWS = t; hoveredId = null;
+            }
+            if (e.ctrlKey && e.key === 'q') { e.preventDefault(); spawn('terminal'); }
+            if (e.ctrlKey && e.key === 'b') { e.preventDefault(); spawn('browser'); }
+            if (e.ctrlKey && e.key === 'c') { e.preventDefault(); kill(); }
+            if (e.ctrlKey && e.key === 'r') { e.preventDefault(); spawn(prompt("Enter app: ")); }
+        });
+        spawn("introduction")
+    </script>
+</body>
+
+</html>
