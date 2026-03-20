@@ -188,6 +188,13 @@
             border-color: #fff;
             font-weight: bold;
         }
+
+        .tab-title {
+            max-width: 120px;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+        }
         
         .tab-close {
             display: flex;
@@ -548,10 +555,29 @@
             const addTab = () => {
                 const tabId = 'tab-' + Math.random().toString(36).substr(2, 5);
                 const tab = document.createElement('div');
-                tab.className = 'tab'; tab.innerHTML = `<span>TAB</span><div class="tab-close">✕</div>`;
+                tab.className = 'tab'; 
+                // Initial placeholder title
+                tab.innerHTML = `<span class="tab-title">Loading...</span><div class="tab-close">✕</div>`;
+                
                 const iframe = document.createElement('iframe');
-                iframe.id = tabId; iframe.src = GOOGLE_URL;
+                iframe.id = tabId; 
+                iframe.src = GOOGLE_URL;
+                
+                // NEW: Logic to sync the title
+                iframe.onload = () => {
+                    try {
+                        // This works if the site is on the same domain or allows it
+                        const newTitle = iframe.contentDocument.title;
+                        if (newTitle) tab.querySelector('.tab-title').innerText = newTitle;
+                    } catch (e) {
+                        // Fallback for Cross-Origin: Use a cleaned up version of the URL
+                        const url = new URL(iframe.src);
+                        tab.querySelector('.tab-title').innerText = url.hostname.replace('www.', '');
+                    }
+                };
+
                 iframeContainer.appendChild(iframe);
+                
                 tab.onclick = (e) => {
                     if (e.target.className === 'tab-close') {
                         iframe.remove(); tab.remove();
@@ -562,9 +588,12 @@
                     }
                     tabsContainer.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
                     iframeContainer.querySelectorAll('iframe').forEach(f => f.classList.remove('active'));
-                    tab.classList.add('active'); iframe.classList.add('active');
+                    tab.classList.add('active'); 
+                    iframe.classList.add('active');
                 };
-                tabsContainer.appendChild(tab); tab.click();
+                
+                tabsContainer.appendChild(tab); 
+                tab.click();
             };
             addBtn.onclick = () => addTab();
             tabBar.appendChild(tabsContainer); tabBar.appendChild(addBtn);
